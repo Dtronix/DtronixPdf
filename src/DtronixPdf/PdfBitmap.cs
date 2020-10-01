@@ -10,13 +10,14 @@ namespace DtronixPdf
     public class PdfBitmap : IAsyncDisposable
     {
         private readonly FpdfBitmapT _pdfBitmap;
-        private readonly ThreadDispatcher _dispatcher;
 
-        public PixelFormat Type => PixelFormat.Format32bppPArgb;
+        private readonly ThreadDispatcher _dispatcher;
 
         public int Width { get; }
 
         public int Height { get; }
+
+        public PixelFormat Format { get; }
 
         public int Stride { get; }
 
@@ -24,17 +25,31 @@ namespace DtronixPdf
 
         public Bitmap Bitmap { get; }
 
+        public float Scale { get; }
+
+        public Rectangle Viewport { get; }
+
         public bool IsDisposed { get; private set; }
 
-        internal PdfBitmap(FpdfBitmapT pdfBitmap, int width, int height, ThreadDispatcher dispatcher)
+        internal PdfBitmap(
+            FpdfBitmapT pdfBitmap, 
+            int width, 
+            int height, 
+            ThreadDispatcher dispatcher, 
+            PixelFormat format, 
+            float scale, 
+            Rectangle viewport)
         {
             _pdfBitmap = pdfBitmap;
             _dispatcher = dispatcher;
             Scan0 = fpdfview.FPDFBitmapGetBuffer(pdfBitmap);
             Stride = fpdfview.FPDFBitmapGetStride(pdfBitmap);
             Height = height;
+            Format = format;
+            Scale = scale;
+            Viewport = viewport;
             Width = width;
-            Bitmap = new Bitmap(width, height, Stride, PixelFormat.Format32bppPArgb, Scan0);
+            Bitmap = new Bitmap(width, height, Stride, format, Scan0);
         }
 
         public async ValueTask DisposeAsync()
@@ -49,7 +64,6 @@ namespace DtronixPdf
             {
                 fpdfview.FPDFBitmapDestroy(_pdfBitmap);
             });
-
         }
     }
 }

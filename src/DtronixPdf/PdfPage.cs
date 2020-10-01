@@ -25,7 +25,7 @@ namespace DtronixPdf
         }
 
         internal static async Task<PdfPage> Create(
-            ThreadDispatcher dispatcher, 
+            ThreadDispatcher dispatcher,
             FpdfDocumentT documentInstance,
             int pageIndex)
         {
@@ -59,29 +59,32 @@ namespace DtronixPdf
 
         public Task<PdfBitmap> Render(RenderFlags flags, float scale)
         {
-            return Render(flags, scale, (0, 0, 0, 0));
+            return Render(flags, scale, new Rectangle(0,0, (int) (Size.Width * scale),(int) (Size.Height * scale)));
         }
 
 
-        public Task<PdfBitmap> Render(RenderFlags flags, float scale,
-            (float left, float top, float right, float bottom) clip)
+        public Task<PdfBitmap> Render(RenderFlags flags, float scale, Rectangle viewport)
         {
-            return Render(flags, scale, clip, null);
+            return Render(flags, scale, viewport, false, Color.White);
         }
 
         public async Task<PdfBitmap> Render(
             RenderFlags flags,
             float scale,
-            (float left, float top, float right, float bottom) clip,
+            Rectangle viewport,
+            bool alpha,
             Color? backgroundColor)
         {
             return await _dispatcher.QueueWithResult(
-                new RenderPageAction(_dispatcher, _pageInstance, scale, clip, flags, backgroundColor));
+                new RenderPageAction(_dispatcher, _pageInstance, scale, viewport, flags, backgroundColor, alpha));
         }
 
         public async ValueTask DisposeAsync()
         {
-            await _dispatcher.QueueForCompletion(() => { fpdfview.FPDF_ClosePage(_pageInstance); });
+            await _dispatcher.QueueForCompletion(() =>
+            {
+                fpdfview.FPDF_ClosePage(_pageInstance);
+            });
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 using DtronixPdf.Renderer.Dispatcher;
 using PDFiumCore;
 
@@ -9,38 +10,41 @@ namespace DtronixPdf.Actions
     {
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
-        private readonly (float left, float top, float right, float bottom) _clip;
+        private readonly Rectangle _viewport;
         private readonly RenderFlags _flags;
         private readonly Color? _backgroundColor;
+        private readonly bool _includeAlpha;
         private readonly ThreadDispatcher _dispatcher;
 
         public RenderPageAction(
             ThreadDispatcher dispatcher,
             FpdfPageT pageInstance,
             float scale,
-            (float left, float top, float right, float bottom) clip,
+            Rectangle viewport,
             RenderFlags flags,
-            Color? backgroundColor)
+            Color? backgroundColor,
+            bool includeAlpha)
         {
             _pageInstance = pageInstance;
             _scale = scale;
-            _clip = clip;
+            _viewport = viewport;
             _flags = flags;
             _backgroundColor = backgroundColor;
+            _includeAlpha = includeAlpha;
             _dispatcher = dispatcher;
         }
 
         protected override PdfBitmap OnExecute()
         {
-            var width = (int) ((fpdfview.FPDF_GetPageWidth(_pageInstance) * _scale));
-            var height = (int) (fpdfview.FPDF_GetPageHeight(_pageInstance) * _scale);
+            var bitmap = fpdfview.FPDFBitmapCreateEx(
+                _viewport.Width,
+                _viewport.Height,
+                (int) (_includeAlpha ? FPDFBitmapFormat.BGRA : FPDFBitmapFormat.BGR) , 
+                IntPtr.Zero, 
+                0);
 
-            var bitmap = fpdfview.FPDFBitmapCreate(width, height, _backgroundColor.HasValue ? 0 : 1);
-
-            if (_backgroundColor.HasValue)
-            {
-                fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, width, height, (uint) _backgroundColor.Value.ToArgb());
-            }
+            if(_backgroundColor.HasValue)
+                fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, _viewport.Width, _viewport.Height, (uint) _backgroundColor.Value.ToArgb());
 
             if (bitmap == null)
                 throw new Exception("failed to create a bitmap object");
@@ -57,17 +61,24 @@ namespace DtronixPdf.Actions
                 matrix.B = 0;
                 matrix.C = 0;
                 matrix.D = _scale;
-                matrix.E = -_clip.left;
-                matrix.F = -_clip.top;
+                matrix.E = -_viewport.Left;
+                matrix.F = -_viewport.Top;
 
                 clipping.Left = 0;
-                clipping.Right = width - _clip.right;
+                clipping.Right = _viewport.Width;
                 clipping.Bottom = 0;
-                clipping.Top = height - _clip.bottom;
+                clipping.Top = _viewport.Height;
 
                 fpdfview.FPDF_RenderPageBitmapWithMatrix(bitmap, _pageInstance, matrix, clipping, (int) _flags);
 
-                return new PdfBitmap(bitmap, (int) (width - _clip.left - _clip.right), (int)(height - _clip.top - _clip.bottom), _dispatcher);
+                return new PdfBitmap(
+                    bitmap,
+                    _viewport.Width,
+                    _viewport.Height,
+                    _dispatcher,
+                    _includeAlpha ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb,
+                    _scale,
+                    _viewport);
             }
             catch (Exception ex)
             {

@@ -10,7 +10,7 @@ namespace DtronixPdf.Actions
     {
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
-        private readonly Rectangle _viewport;
+        private readonly RectangleF _viewport;
         private readonly RenderFlags _flags;
         private readonly Color? _backgroundColor;
         private readonly bool _includeAlpha;
@@ -20,7 +20,7 @@ namespace DtronixPdf.Actions
             ThreadDispatcher dispatcher,
             FpdfPageT pageInstance,
             float scale,
-            Rectangle viewport,
+            RectangleF viewport,
             RenderFlags flags,
             Color? backgroundColor,
             bool includeAlpha)
@@ -36,15 +36,17 @@ namespace DtronixPdf.Actions
 
         protected override PdfBitmap OnExecute()
         {
+            
             var bitmap = fpdfview.FPDFBitmapCreateEx(
-                _viewport.Width,
-                _viewport.Height,
+                (int)_viewport.Width,
+                (int)_viewport.Height,
                 (int) (_includeAlpha ? FPDFBitmapFormat.BGRA : FPDFBitmapFormat.BGR) , 
                 IntPtr.Zero, 
                 0);
 
             if(_backgroundColor.HasValue)
-                fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, _viewport.Width, _viewport.Height, (uint) _backgroundColor.Value.ToArgb());
+                fpdfview.FPDFBitmapFillRect(
+                    bitmap, 0, 0, (int)_viewport.Width, (int)_viewport.Height, (uint) _backgroundColor.Value.ToArgb());
 
             if (bitmap == null)
                 throw new Exception("failed to create a bitmap object");
@@ -73,8 +75,8 @@ namespace DtronixPdf.Actions
 
                 return new PdfBitmap(
                     bitmap,
-                    _viewport.Width,
-                    _viewport.Height,
+                    (int)_viewport.Width,
+                    (int)_viewport.Height,
                     _dispatcher,
                     _includeAlpha ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb,
                     _scale,

@@ -59,25 +59,43 @@ namespace DtronixPdf
 
         public Task<PdfBitmap> Render(RenderFlags flags, float scale)
         {
-            return Render(flags, scale, new Rectangle(0,0, (int) (Size.Width * scale),(int) (Size.Height * scale)));
+            return Render(flags, scale, new Rectangle(0, 0, (int) (Size.Width * scale), (int) (Size.Height * scale)));
         }
 
 
-        public Task<PdfBitmap> Render(RenderFlags flags, float scale, Rectangle viewport)
+        public Task<PdfBitmap> Render(RenderFlags flags, float scale, RectangleF viewport)
         {
             return Render(flags, scale, viewport, false, Color.White);
         }
 
+        public Task<PdfBitmap> Render(
+            RenderFlags flags,
+            float scale,
+            Viewport viewport,
+            bool alpha,
+            Color? backgroundColor)
+        {
+            var translatedRectangle = new RectangleF(
+                (int) ((Size.Width / 2 - viewport.Size.Width / 2 + viewport.Center.X) * scale + viewport.Size.Width / 2 * (scale - 1)),
+                (int) ((Size.Height / 2 - viewport.Size.Height / 2 - viewport.Center.Y) * scale + viewport.Size.Height / 2 * (scale - 1)),
+                viewport.Size.Width,
+                viewport.Size.Height);
+
+            return Render(flags, scale, translatedRectangle, alpha, backgroundColor);
+        }
+
+
         public async Task<PdfBitmap> Render(
             RenderFlags flags,
             float scale,
-            Rectangle viewport,
+            RectangleF viewport,
             bool alpha,
             Color? backgroundColor)
         {
             return await _dispatcher.QueueWithResult(
                 new RenderPageAction(_dispatcher, _pageInstance, scale, viewport, flags, backgroundColor, alpha));
         }
+
 
         public async ValueTask DisposeAsync()
         {

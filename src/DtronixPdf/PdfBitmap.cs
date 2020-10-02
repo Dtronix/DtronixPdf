@@ -27,7 +27,7 @@ namespace DtronixPdf
 
         public float Scale { get; }
 
-        public Rectangle Viewport { get; }
+        public RectangleF Viewport { get; }
 
         public bool IsDisposed { get; private set; }
 
@@ -38,7 +38,7 @@ namespace DtronixPdf
             ThreadDispatcher dispatcher, 
             PixelFormat format, 
             float scale, 
-            Rectangle viewport)
+            RectangleF viewport)
         {
             _pdfBitmap = pdfBitmap;
             _dispatcher = dispatcher;

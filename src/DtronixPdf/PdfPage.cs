@@ -17,6 +17,8 @@ namespace DtronixPdf
 
         public SizeF Size { get; private set; }
 
+        public int InitialIndex { get; private set; }
+
         private PdfPage(ThreadDispatcher dispatcher, FpdfDocumentT documentInstance, FpdfPageT pageInstance)
         {
             _dispatcher = dispatcher;
@@ -34,7 +36,10 @@ namespace DtronixPdf
             if (loadPageResult == null)
                 throw new Exception($"Failed to open page for page index {pageIndex}.");
 
-            var page = new PdfPage(dispatcher, documentInstance, loadPageResult);
+            var page = new PdfPage(dispatcher, documentInstance, loadPageResult)
+            {
+                InitialIndex = pageIndex
+            };
 
             var getPageSizeResult = await dispatcher.QueueWithResult(() =>
             {

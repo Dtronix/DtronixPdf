@@ -1,24 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
+﻿using System.Drawing;
 
 namespace DtronixPdf
 {
-    public struct Viewport
+    public readonly struct Viewport
     {
-         public readonly PointF Center;
-         public readonly SizeF Size;
+        public ViewportOrigin OriginLocation { get; }
+        public PointF Origin { get; }
+        public SizeF Size { get; }
 
-        public Viewport(PointF center, SizeF size)
+        public Viewport(PointF origin, SizeF size, ViewportOrigin originLocation)
         {
-            Center = center;
+            OriginLocation = originLocation;
+            Origin = origin;
             Size = size;
         }
 
-        public Viewport(int x, int y, int width, int height)
+        public Viewport(int x, int y, int width, int height, ViewportOrigin originLocation)
         {
-            Center = new Point(x, y);
+            OriginLocation = originLocation;
+            Origin = new Point(x, y);
             Size = new Size(width, height);
         }
     }

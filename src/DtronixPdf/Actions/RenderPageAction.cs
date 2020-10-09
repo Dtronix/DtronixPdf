@@ -10,7 +10,7 @@ namespace DtronixPdf.Actions
     {
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
-        private readonly RectangleF _viewport;
+        private readonly Viewport _viewport;
         private readonly RenderFlags _flags;
         private readonly Color? _backgroundColor;
         private readonly bool _includeAlpha;
@@ -20,7 +20,7 @@ namespace DtronixPdf.Actions
             ThreadDispatcher dispatcher,
             FpdfPageT pageInstance,
             float scale,
-            RectangleF viewport,
+            Viewport viewport,
             RenderFlags flags,
             Color? backgroundColor,
             bool includeAlpha)
@@ -38,15 +38,15 @@ namespace DtronixPdf.Actions
         {
             
             var bitmap = fpdfview.FPDFBitmapCreateEx(
-                (int)_viewport.Width,
-                (int)_viewport.Height,
+                (int)_viewport.Size.Width,
+                (int)_viewport.Size.Height,
                 (int) (_includeAlpha ? FPDFBitmapFormat.BGRA : FPDFBitmapFormat.BGR) , 
                 IntPtr.Zero, 
                 0);
 
             if(_backgroundColor.HasValue)
                 fpdfview.FPDFBitmapFillRect(
-                    bitmap, 0, 0, (int)_viewport.Width, (int)_viewport.Height, (uint) _backgroundColor.Value.ToArgb());
+                    bitmap, 0, 0, (int)_viewport.Size.Width, (int)_viewport.Size.Height, (uint) _backgroundColor.Value.ToArgb());
 
             if (bitmap == null)
                 throw new Exception("failed to create a bitmap object");
@@ -63,20 +63,38 @@ namespace DtronixPdf.Actions
                 matrix.B = 0;
                 matrix.C = 0;
                 matrix.D = _scale;
-                matrix.E = -_viewport.Left;
-                matrix.F = -_viewport.Top;
+
+                switch (_viewport.OriginLocation)
+                {
+                    case ViewportOrigin.Unset:
+                        break;
+                    case ViewportOrigin.TopLeft:
+                        matrix.E = -_viewport.Origin.X;
+                        matrix.F = -_viewport.Origin.Y;
+                        break;
+                    case ViewportOrigin.TopRight:
+                        break;
+                    case ViewportOrigin.BottomRight:
+                        break;
+                    case ViewportOrigin.BottomLeft:
+                        break;
+                    case ViewportOrigin.Center:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
 
                 clipping.Left = 0;
-                clipping.Right = _viewport.Width;
+                clipping.Right = _viewport.Size.Width;
                 clipping.Bottom = 0;
-                clipping.Top = _viewport.Height;
+                clipping.Top = _viewport.Size.Height;
 
                 fpdfview.FPDF_RenderPageBitmapWithMatrix(bitmap, _pageInstance, matrix, clipping, (int) _flags);
 
                 return new PdfBitmap(
                     bitmap,
-                    (int)_viewport.Width,
-                    (int)_viewport.Height,
+                    (int)_viewport.Size.Width,
+                    (int)_viewport.Size.Height,
                     _dispatcher,
                     _includeAlpha ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb,
                     _scale,

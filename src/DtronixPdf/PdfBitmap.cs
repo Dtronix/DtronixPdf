@@ -27,10 +27,20 @@ namespace DtronixPdf
 
         public float Scale { get; }
 
-        public RectangleF Viewport { get; }
+        public Viewport Viewport { get; }
 
         public bool IsDisposed { get; private set; }
 
+        /// <summary>
+        /// Only call within the dispatcher since dll calls are made.
+        /// </summary>
+        /// <param name="pdfBitmap"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="dispatcher"></param>
+        /// <param name="format"></param>
+        /// <param name="scale"></param>
+        /// <param name="viewport"></param>
         internal PdfBitmap(
             FpdfBitmapT pdfBitmap, 
             int width, 
@@ -38,7 +48,7 @@ namespace DtronixPdf
             ThreadDispatcher dispatcher, 
             PixelFormat format, 
             float scale, 
-            RectangleF viewport)
+            Viewport viewport)
         {
             _pdfBitmap = pdfBitmap;
             _dispatcher = dispatcher;

@@ -51,7 +51,7 @@ namespace DtronixPdf
 
             return page;
         }
-
+        /*
         public Task<PdfBitmap> Render(RenderFlags flags)
         {
             return Render(flags, 1);
@@ -67,7 +67,7 @@ namespace DtronixPdf
         {
             return Render(flags, scale, viewport, false, Color.White);
         }
-
+        
         public Task<PdfBitmap> Render(
             RenderFlags flags,
             float scale,
@@ -76,19 +76,19 @@ namespace DtronixPdf
             Color? backgroundColor)
         {
             var translatedRectangle = new RectangleF(
-                (int) ((Size.Width / 2 - viewport.Size.Width / 2 + viewport.Center.X) * scale + viewport.Size.Width / 2 * (scale - 1)),
-                (int) ((Size.Height / 2 - viewport.Size.Height / 2 - viewport.Center.Y) * scale + viewport.Size.Height / 2 * (scale - 1)),
+                (int) ((Size.Width / 2 - viewport.Size.Width / 2 + viewport.Origin.X) * scale + viewport.Size.Width / 2 * (scale - 1)),
+                (int) ((Size.Height / 2 - viewport.Size.Height / 2 - viewport.Origin.Y) * scale + viewport.Size.Height / 2 * (scale - 1)),
                 viewport.Size.Width,
                 viewport.Size.Height);
 
             return Render(flags, scale, translatedRectangle, alpha, backgroundColor);
         }
-
+        */
 
         public async Task<PdfBitmap> Render(
             RenderFlags flags,
             float scale,
-            RectangleF viewport,
+            Viewport viewport,
             bool alpha,
             Color? backgroundColor)
         {

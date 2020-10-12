@@ -15,6 +15,7 @@ namespace DtronixPdf
         private readonly ThreadDispatcher _dispatcher;
         private readonly FpdfDocumentT _documentInstance;
         private readonly FpdfPageT _pageInstance;
+        private bool _isDisposed = false;
 
         public SizeF Size { get; private set; }
 
@@ -99,6 +100,9 @@ namespace DtronixPdf
             Color? backgroundColor,
             CancellationToken cancellationToken)
         {
+            if(_isDisposed)
+                throw new ObjectDisposedException(nameof(PdfPage));
+
             if(viewport.IsEmpty)
                 throw new ArgumentException("Viewport is empty", nameof(viewport));
 
@@ -109,6 +113,11 @@ namespace DtronixPdf
 
         public async ValueTask DisposeAsync()
         {
+            if (_isDisposed)
+                return;
+
+            _isDisposed = true;
+
             await _dispatcher.QueueForCompletion(() =>
             {
                 fpdfview.FPDF_ClosePage(_pageInstance);

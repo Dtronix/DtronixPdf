@@ -44,12 +44,12 @@ namespace DtronixPdf.Actions
                 IntPtr.Zero, 
                 0);
 
+            if (bitmap == null)
+                throw new Exception("failed to create a bitmap object");
+
             if(_backgroundColor.HasValue)
                 fpdfview.FPDFBitmapFillRect(
                     bitmap, 0, 0, (int)_viewport.Size.Width, (int)_viewport.Size.Height, (uint) _backgroundColor.Value.ToArgb());
-
-            if (bitmap == null)
-                throw new Exception("failed to create a bitmap object");
 
             try
             {
@@ -102,6 +102,7 @@ namespace DtronixPdf.Actions
             }
             catch (Exception ex)
             {
+                fpdfview.FPDFBitmapDestroy(bitmap);
                 throw new Exception("error rendering page", ex);
             }
         }

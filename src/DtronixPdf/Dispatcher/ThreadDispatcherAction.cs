@@ -18,7 +18,7 @@ namespace DtronixPdf.Renderer.Dispatcher
 
         internal override void SetFailed(Exception e)
         {
-            _completionSource.TrySetException(e);
+            var trys = _completionSource.TrySetException(e);
         }
 
         public override void Execute()

@@ -97,6 +97,9 @@ namespace DtronixPdf
             bool alpha,
             Color? backgroundColor)
         {
+            if(viewport.IsEmpty)
+                throw new ArgumentException("Viewport is empty", nameof(viewport));
+
             return await _dispatcher.QueueWithResult(
                 new RenderPageAction(_dispatcher, _pageInstance, scale, viewport, flags, backgroundColor, alpha));
         }

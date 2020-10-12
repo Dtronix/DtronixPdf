@@ -23,8 +23,6 @@ namespace DtronixPdf
 
         public IntPtr Scan0 { get; }
 
-        public Bitmap Bitmap { get; }
-
         public float Scale { get; }
 
         public Viewport Viewport { get; }
@@ -59,7 +57,11 @@ namespace DtronixPdf
             Scale = scale;
             Viewport = viewport;
             Width = width;
-            Bitmap = new Bitmap(width, height, Stride, format, Scan0);
+        }
+
+        public Bitmap ToBitmap()
+        {
+            return new Bitmap(Width, Height, Stride, Format, Scan0);
         }
 
         public async ValueTask DisposeAsync()
@@ -68,7 +70,6 @@ namespace DtronixPdf
                 return;
 
             IsDisposed = true;
-            Bitmap?.Dispose();
 
             await _dispatcher.QueueForCompletion(() =>
             {

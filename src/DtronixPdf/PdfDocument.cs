@@ -17,6 +17,8 @@ namespace DtronixPdf
 
         private static readonly ThreadDispatcher Dispatcher;
 
+        public int Pages { get; private set; }
+
         static PdfDocument()
         {
             Dispatcher = new ThreadDispatcher();
@@ -33,14 +35,23 @@ namespace DtronixPdf
 
         public static async Task<PdfDocument> Load(string path, string password)
         {
+            int pages = -1;
             var result = await Dispatcher.QueueWithResult(() =>
-                fpdfview.FPDF_LoadDocument(path, password));
+            {
+                var document = fpdfview.FPDF_LoadDocument(path, password);
+                pages = fpdfview.FPDF_GetPageCount(document);
+                return document;
+            });
 
             if (result == null)
                 return null;
 
-            var renderer = new PdfDocument(result);
-            return renderer;
+            var pdfDocument = new PdfDocument(result)
+            {
+                Pages = pages
+            };
+
+            return pdfDocument;
         }
 
         public static async Task<PdfDocument> Create()

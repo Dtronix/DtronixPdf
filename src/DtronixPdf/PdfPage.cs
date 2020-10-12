@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DtronixPdf.Actions;
 using DtronixPdf.Renderer.Dispatcher;
@@ -95,13 +96,14 @@ namespace DtronixPdf
             float scale,
             Viewport viewport,
             bool alpha,
-            Color? backgroundColor)
+            Color? backgroundColor,
+            CancellationToken cancellationToken)
         {
             if(viewport.IsEmpty)
                 throw new ArgumentException("Viewport is empty", nameof(viewport));
 
             return await _dispatcher.QueueWithResult(
-                new RenderPageAction(_dispatcher, _pageInstance, scale, viewport, flags, backgroundColor, alpha));
+                new RenderPageAction(_dispatcher, _pageInstance, scale, viewport, flags, backgroundColor, alpha, cancellationToken));
         }
 
 

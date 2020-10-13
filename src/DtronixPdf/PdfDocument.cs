@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using DtronixPdf.Actions;
+using DtronixPdf.Dispatcher;
 using DtronixPdf.Renderer;
 using DtronixPdf.Renderer.Dispatcher;
 using PDFiumCore;

@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading;
+using DtronixPdf.Dispatcher;
 using DtronixPdf.Renderer.Dispatcher;
 using PDFiumCore;
 

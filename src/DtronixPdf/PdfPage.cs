@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DtronixPdf.Actions;
+using DtronixPdf.Dispatcher;
 using DtronixPdf.Renderer.Dispatcher;
 using PDFiumCore;
 
@@ -98,16 +99,26 @@ namespace DtronixPdf
             Viewport viewport,
             bool alpha,
             Color? backgroundColor,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            DispatcherPriority priority)
         {
-            if(_isDisposed)
+            if (_isDisposed)
                 throw new ObjectDisposedException(nameof(PdfPage));
 
-            if(viewport.IsEmpty)
+            if (viewport.IsEmpty)
                 throw new ArgumentException("Viewport is empty", nameof(viewport));
 
             return await _dispatcher.QueueWithResult(
-                new RenderPageAction(_dispatcher, _pageInstance, scale, viewport, flags, backgroundColor, alpha, cancellationToken));
+                new RenderPageAction(
+                    _dispatcher,
+                    _pageInstance,
+                    scale,
+                    viewport,
+                    flags,
+                    backgroundColor,
+                    alpha,
+                    cancellationToken),
+                priority);
         }
 
 

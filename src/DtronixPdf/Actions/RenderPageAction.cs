@@ -12,7 +12,7 @@ namespace DtronixPdf.Actions
     {
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
-        private readonly Viewport _viewport;
+        private readonly RectangleF _viewport;
         private readonly RenderFlags _flags;
         private readonly Color? _backgroundColor;
         private readonly bool _includeAlpha;
@@ -23,7 +23,7 @@ namespace DtronixPdf.Actions
         public RenderPageAction(ThreadDispatcher dispatcher,
             FpdfPageT pageInstance,
             float scale,
-            Viewport viewport,
+            RectangleF viewport,
             RenderFlags flags,
             Color? backgroundColor,
             bool includeAlpha,
@@ -75,26 +75,8 @@ namespace DtronixPdf.Actions
                 matrix.B = 0;
                 matrix.C = 0;
                 matrix.D = _scale;
-
-                switch (_viewport.OriginLocation)
-                {
-                    case ViewportOrigin.Unset:
-                        break;
-                    case ViewportOrigin.TopLeft:
-                        matrix.E = -_viewport.Origin.X;
-                        matrix.F = -_viewport.Origin.Y;
-                        break;
-                    case ViewportOrigin.TopRight:
-                        break;
-                    case ViewportOrigin.BottomRight:
-                        break;
-                    case ViewportOrigin.BottomLeft:
-                        break;
-                    case ViewportOrigin.Center:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                matrix.E = -_viewport.X;
+                matrix.F = -_viewport.Y;
 
                 clipping.Left = 0;
                 clipping.Right = _viewport.Size.Width;

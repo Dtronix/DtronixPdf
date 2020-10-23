@@ -96,7 +96,7 @@ namespace DtronixPdf
         public async Task<PdfBitmap> Render(
             RenderFlags flags,
             float scale,
-            Viewport viewport,
+            RectangleF viewport,
             bool alpha,
             Color? backgroundColor,
             CancellationToken cancellationToken,

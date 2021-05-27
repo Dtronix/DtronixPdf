@@ -4,19 +4,14 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="drawing.pdf" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="..\..\..\drawing.pdf" Link="drawing.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\DtronixPdf\DtronixPdf.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TestPdf.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Threading.Tasks;
 using DtronixPdf;
+using DtronixPdf.Dispatcher;
 using PDFiumCore;
 
 namespace DtronixPdfBenchmark
@@ -19,12 +20,12 @@ namespace DtronixPdfBenchmark
 
         static async Task RenderViewport()
         {
-            var drawing = await PdfDocument.Load("drawing.pdf", null);
+            var drawing = await PdfDocument.Load("TestPdf.pdf", null);
             await using var page = await drawing.GetPage(0);
 
 
             sw.Start();
-            var iterations = 100;
+            var iterations = 2;
             //await using var page = await drawing.GetPage(0);
             var viewport = new Rectangle(500, 50, 500, 500);
 
@@ -38,17 +39,17 @@ namespace DtronixPdfBenchmark
                         ((page.Size.Height - viewport.Height - viewport.Top) * scale) + viewport.Height / 2 * (scale - 1)), 
                  */
                 float scale = i;
-                Point center = new Point(500, 500);
+                Point center = new Point(0, 0);
                 Size size = new Size(1920, 1080);
-
+                
                 await using var result = await page.Render(RenderFlags.RenderAnnotations, scale,
                     new Rectangle((int) ((page.Size.Width / 2 - size.Width / 2 + center.X) * scale + size.Width / 2 * (scale - 1)),
                         (int) ((page.Size.Height / 2 - size.Height / 2 - center.Y) * scale + size.Height / 2 * (scale - 1)),
                         size.Width,
                         size.Height),
-                    false, Color.White);
+                    false, Color.White, default, DispatcherPriority.Normal);
                 Console.WriteLine($"{sw.ElapsedMilliseconds:##,###}");
-                result.Bitmap.Save($"test{i}.png");
+                result.ToBitmap().Save($"test{i}.png");
                 sw.Restart();
             }
 

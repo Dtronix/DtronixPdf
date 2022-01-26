@@ -1,60 +1,87 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Drawing;
+using System.IO;
 using System.Threading.Tasks;
 using DtronixPdf;
 using DtronixPdf.Dispatcher;
 using PDFiumCore;
+using SixLabors.ImageSharp;
 
 namespace DtronixPdfBenchmark
 {
     class Program
     {
         static Stopwatch sw = new Stopwatch();
-
+        private const string TestPdf = "TestPdf.pdf";
         static async Task Main(string[] args)
         {
-            await RenderViewport();
+            if(!Directory.Exists("output"))
+                Directory.CreateDirectory("output");
+
+            //await RenderViewportScaling();
+            await OpenAndCloseBenchmark();
+
+
             Console.ReadLine();
         }
 
-        static async Task RenderViewport()
+        static async Task RenderViewportScaling()
         {
-            var drawing = await PdfDocument.Load("TestPdf.pdf", null);
-            await using var page = await drawing.GetPage(0);
+            Console.WriteLine($"RenderViewport Benchmark {TestPdf}");
+            var document = await PdfDocument.Load(TestPdf, null);
 
-
-            sw.Start();
-            var iterations = 2;
-            //await using var page = await drawing.GetPage(0);
-            var viewport = new Rectangle(500, 50, 500, 500);
+            sw.Restart();
+            var iterations = 100;
 
             for (int i = 1; i < iterations; i++)
             {
-                /*
-                 * new BitmapClip(
-                        viewport.Left * scale + viewport.Width / 2 * (scale - 1), 
-                        viewport.Top * scale + viewport.Height / 2 * (scale - 1), 
-                        (page.Size.Width - viewport.Width - viewport.Left) * scale + viewport.Width / 2 * (scale - 1), 
-                        ((page.Size.Height - viewport.Height - viewport.Top) * scale) + viewport.Height / 2 * (scale - 1)), 
-                 */
-                float scale = i;
+                await using var page = await document.GetPage(0);
+                
+                float scale = i * 0.25f;
                 Point center = new Point(0, 0);
                 Size size = new Size(1920, 1080);
-                
-                await using var result = await page.Render(RenderFlags.RenderAnnotations, scale,
-                    new Rectangle((int) ((page.Size.Width / 2 - size.Width / 2 + center.X) * scale + size.Width / 2 * (scale - 1)),
-                        (int) ((page.Size.Height / 2 - size.Height / 2 - center.Y) * scale + size.Height / 2 * (scale - 1)),
-                        size.Width,
-                        size.Height),
+
+                var viewport = new RectangleF(
+                    (int)((page.Size.Width / 2 - size.Width / 2 + center.X) * scale + size.Width / 2 * (scale - 1)),
+                    (int)((page.Size.Height / 2 - size.Height / 2 - center.Y) * scale + size.Height / 2 * (scale - 1)),
+                    size.Width,
+                    size.Height);
+
+
+                await using var result = await page.Render(
+                    RenderFlags.RenderAnnotations, 
+                    scale,
+                    viewport,
                     false, Color.White, default, DispatcherPriority.Normal);
-                Console.WriteLine($"{sw.ElapsedMilliseconds:##,###}");
-                result.ToBitmap().Save($"test{i}.png");
+                await result.Image.SaveAsPngAsync($"output/{TestPdf}-{i}.png");
+                Console.WriteLine($"{sw.ElapsedMilliseconds:##,###} Milliseconds");
                 sw.Restart();
             }
 
             sw.Stop();
-            await drawing.DisposeAsync();
+            await document.DisposeAsync();
+
+            Console.WriteLine($"Rendering {TestPdf} Complete");
+        }
+
+        static async Task OpenAndCloseBenchmark()
+        {
+            Console.WriteLine($"Open and Close {TestPdf}");
+            sw.Restart();
+            var iterations = 100;
+
+            for (int i = 1; i < iterations; i++)
+            {
+                await using var document = await PdfDocument.Load(TestPdf, null);
+                await using var page = await document.GetPage(0);
+
+                Console.WriteLine($"{sw.ElapsedMilliseconds:##,###} Milliseconds");
+                sw.Restart();
+            }
+
+            sw.Stop();
+
+            Console.WriteLine($"Open and Close {TestPdf} Complete");
         }
 
         static async Task RenderTests()

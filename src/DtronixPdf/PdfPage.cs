@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DtronixPdf.Actions;
 using DtronixPdf.Dispatcher;
-using DtronixPdf.Renderer.Dispatcher;
 using PDFiumCore;
+using SixLabors.ImageSharp;
 
 namespace DtronixPdf
 {

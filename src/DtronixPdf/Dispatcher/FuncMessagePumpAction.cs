@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DtronixPdf.Renderer.Dispatcher
+namespace DtronixPdf.Dispatcher
 {
     public class FuncMessagePumpAction<TResult> : ThreadMessagePumpAction<TResult>
     {

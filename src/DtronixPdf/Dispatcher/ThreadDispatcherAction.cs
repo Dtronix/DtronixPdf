@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace DtronixPdf.Renderer.Dispatcher
+namespace DtronixPdf.Dispatcher
 {
     public abstract class ThreadDispatcherAction
     {
@@ -11,14 +11,13 @@ namespace DtronixPdf.Renderer.Dispatcher
 
     public abstract class ThreadMessagePumpAction<TResult> : ThreadDispatcherAction
     {
-        private readonly TaskCompletionSource<TResult> _completionSource
-            = new TaskCompletionSource<TResult>();
+        private readonly TaskCompletionSource<TResult> _completionSource = new();
 
         public Task<TResult> Result => _completionSource.Task;
 
         internal override void SetFailed(Exception e)
         {
-            var trys = _completionSource.TrySetException(e);
+            _completionSource.TrySetException(e);
         }
 
         public override void Execute()

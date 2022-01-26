@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Threading;
 using DtronixPdf.Dispatcher;
-using DtronixPdf.Renderer.Dispatcher;
 using PDFiumCore;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace DtronixPdf.Actions
 {
@@ -39,16 +38,16 @@ namespace DtronixPdf.Actions
             _dispatcher = dispatcher;
         }
 
-        protected override PdfBitmap OnExecute()
+        protected override unsafe PdfBitmap OnExecute()
         {
             try
             {
                 _cancellationToken.ThrowIfCancellationRequested();
 
                 _bitmap = fpdfview.FPDFBitmapCreateEx(
-                    (int) _viewport.Size.Width,
-                    (int) _viewport.Size.Height,
-                    (int) (_includeAlpha ? FPDFBitmapFormat.BGRA : FPDFBitmapFormat.BGR),
+                    (int)_viewport.Size.Width,
+                    (int)_viewport.Size.Height,
+                    (int)(_includeAlpha ? FPDFBitmapFormat.BGRA : FPDFBitmapFormat.BGR),
                     IntPtr.Zero,
                     0);
 
@@ -56,11 +55,15 @@ namespace DtronixPdf.Actions
                     throw new Exception("failed to create a bitmap object");
 
                 _cancellationToken.ThrowIfCancellationRequested();
-
                 if (_backgroundColor.HasValue)
                 {
                     fpdfview.FPDFBitmapFillRect(
-                        _bitmap, 0, 0, (int) _viewport.Size.Width, (int) _viewport.Size.Height, (uint) _backgroundColor.Value.ToArgb());
+                        _bitmap,
+                        0, 
+                        0, 
+                        (int)_viewport.Size.Width,
+                        (int)_viewport.Size.Height,
+                        _backgroundColor.Value.ToPixel<Argb32>().Argb);
 
                     _cancellationToken.ThrowIfCancellationRequested();
                 }
@@ -83,19 +86,23 @@ namespace DtronixPdf.Actions
                 clipping.Bottom = 0;
                 clipping.Top = _viewport.Size.Height;
 
-                fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int) _flags);
+                fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)_flags);
 
                 // Cancellation check;
                 _cancellationToken.ThrowIfCancellationRequested();
+                var scan0 = fpdfview.FPDFBitmapGetBuffer(_bitmap);
 
-                return new PdfBitmap(
-                    _bitmap,
-                    (int) _viewport.Size.Width,
-                    (int) _viewport.Size.Height,
-                    _dispatcher,
-                    _includeAlpha ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb,
-                    _scale,
-                    _viewport);
+                var image = _includeAlpha
+                    ? (Image)Image.WrapMemory<Bgra32>(
+                        scan0.ToPointer(),
+                        (int)_viewport.Size.Width,
+                        (int)_viewport.Size.Height)
+                    : Image.WrapMemory<Bgr24>(
+                        scan0.ToPointer(),
+                        (int)_viewport.Size.Width,
+                        (int)_viewport.Size.Height);
+                
+                return new PdfBitmap(_bitmap, image, _dispatcher, _scale, _viewport);
             }
             catch (OperationCanceledException)
             {

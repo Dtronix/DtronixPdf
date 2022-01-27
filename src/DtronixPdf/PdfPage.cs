@@ -3,12 +3,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using DtronixPdf.Actions;
 using DtronixPdf.Dispatcher;
+using DtronixPdf.Dispatcher.Actions;
 using PDFiumCore;
 using SixLabors.ImageSharp;
 
 namespace DtronixPdf
 {
-    public class PdfPage : IAsyncDisposable
+    public partial class PdfPage : IAsyncDisposable
     {
         private readonly ThreadDispatcher _dispatcher;
         private readonly FpdfDocumentT _documentInstance;
@@ -31,8 +32,7 @@ namespace DtronixPdf
             FpdfDocumentT documentInstance,
             int pageIndex)
         {
-            var loadPageResult = await dispatcher.QueueWithResult(() =>
-                fpdfview.FPDF_LoadPage(documentInstance, pageIndex));
+            var loadPageResult = await dispatcher.QueueWithResult(() => fpdfview.FPDF_LoadPage(documentInstance, pageIndex));
             if (loadPageResult == null)
                 throw new Exception($"Failed to open page for page index {pageIndex}.");
 
@@ -44,6 +44,7 @@ namespace DtronixPdf
             var getPageSizeResult = await dispatcher.QueueWithResult(() =>
             {
                 var size = new FS_SIZEF_();
+                
                 var result = fpdfview.FPDF_GetPageSizeByIndexF(documentInstance, pageIndex, size);
 
                 return result == 0 ? null : size;
@@ -56,39 +57,6 @@ namespace DtronixPdf
 
             return page;
         }
-        /*
-        public Task<PdfBitmap> Render(RenderFlags flags)
-        {
-            return Render(flags, 1);
-        }
-
-        public Task<PdfBitmap> Render(RenderFlags flags, float scale)
-        {
-            return Render(flags, scale, new Rectangle(0, 0, (int) (Size.Width * scale), (int) (Size.Height * scale)));
-        }
-
-
-        public Task<PdfBitmap> Render(RenderFlags flags, float scale, RectangleF viewport)
-        {
-            return Render(flags, scale, viewport, false, Color.White);
-        }
-        
-        public Task<PdfBitmap> Render(
-            RenderFlags flags,
-            float scale,
-            Viewport viewport,
-            bool alpha,
-            Color? backgroundColor)
-        {
-            var translatedRectangle = new RectangleF(
-                (int) ((Size.Width / 2 - viewport.Size.Width / 2 + viewport.Origin.X) * scale + viewport.Size.Width / 2 * (scale - 1)),
-                (int) ((Size.Height / 2 - viewport.Size.Height / 2 - viewport.Origin.Y) * scale + viewport.Size.Height / 2 * (scale - 1)),
-                viewport.Size.Width,
-                viewport.Size.Height);
-
-            return Render(flags, scale, translatedRectangle, alpha, backgroundColor);
-        }
-        */
 
         public async Task<PdfBitmap> Render(
             RenderFlags flags,
@@ -113,11 +81,9 @@ namespace DtronixPdf
                     viewport,
                     flags,
                     backgroundColor,
-                    alpha,
-                    cancellationToken),
-                priority);
+                    alpha),
+                priority, cancellationToken);
         }
-
 
         public async ValueTask DisposeAsync()
         {
@@ -126,10 +92,10 @@ namespace DtronixPdf
 
             _isDisposed = true;
 
-            await _dispatcher.QueueForCompletion(() =>
+            await _dispatcher.QueueForCompletion(new SimpleMessagePumpAction(() =>
             {
                 fpdfview.FPDF_ClosePage(_pageInstance);
-            });
+            }));
         }
     }
 }

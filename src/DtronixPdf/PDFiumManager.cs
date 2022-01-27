@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,32 +10,88 @@ using PDFiumCore;
 namespace DtronixPdf
 {
 
-    public class PDFiumManager
+    public class PDFiumCoreManager
     {
-        internal readonly ThreadDispatcher Dispatcher;
+        private static bool IsInitialized;
 
-        private static int Instances = 0;
+        private static PDFiumCoreManager _managerDefaultInstance;
+        public static PDFiumCoreManager Default => _managerDefaultInstance ??= new PDFiumCoreManager();
 
-        private static PDFiumManager _managerDefaultInstance;
+        public readonly ThreadDispatcher Dispatcher;
 
-        private static bool FPDF_InitLibrary;
+        private readonly List<PdfDocument> LoadedDocuments = new ();
 
-        public static PDFiumManager Default => _managerDefaultInstance ??= new PDFiumManager();
+        private static readonly ConcurrentBag<PDFiumCoreManager> LoadedManagers = new ();
 
-        public PDFiumManager()
+        private PDFiumCoreManager()
         {
+            LoadedManagers.Add(this);
+
             Dispatcher = new ThreadDispatcher();
             Dispatcher.Start();
-
-            if (!FPDF_InitLibrary)
-                Initialize();
         }
 
-        private async Task Initialize()
+        /// <summary>
+        /// Initialized the PDFiumCore library.
+        /// </summary>
+        /// <returns></returns>
+        public static Task Initialize()
         {
-            FPDF_InitLibrary = true;
+            if (IsInitialized)
+                return Task.CompletedTask;
+
+            IsInitialized = true;
+
             // Initialize the library.
-            await Dispatcher.QueueForCompletion(fpdfview.FPDF_InitLibrary);
+            return Default.Dispatcher.QueueForCompletion(() =>
+            {
+                fpdfview.FPDF_InitLibrary();
+            });
+        }
+
+        private static Task Destroy()
+        {
+            if (!IsInitialized)
+                return Task.CompletedTask;
+
+            foreach (var pdfiumCoreManager in LoadedManagers)
+            {
+                if (pdfiumCoreManager.LoadedDocuments.Count > 0)
+                    throw new InvalidOperationException("Can't destroy loaded library since it is still in use by PdfDocument(s)");
+            }
+
+            IsInitialized = false;
+
+            // Initialize the library.
+            return Default.Dispatcher.QueueForCompletion(fpdfview.FPDF_DestroyLibrary);
+        }
+
+        internal async Task AddDocument(PdfDocument document)
+        {
+            if (document == null)
+                throw new ArgumentNullException(nameof(document));
+
+            if (!IsInitialized)
+                await Initialize();
+
+            lock (LoadedDocuments)
+            {
+                LoadedDocuments.Add(document);
+            }
+        }
+
+        internal async Task RemoveDocument(PdfDocument document)
+        {
+            if (document == null)
+                throw new ArgumentNullException(nameof(document));
+
+            if (!IsInitialized)
+                await Initialize();
+
+            lock (LoadedDocuments)
+            {
+                LoadedDocuments.Remove(document);
+            }
         }
     }
 }

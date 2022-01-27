@@ -2,26 +2,24 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using DtronixPdf.Dispatcher.Actions;
 
 namespace DtronixPdf.Dispatcher
 {
     public class ThreadDispatcher : IDisposable
     {
-        private class StopLoop : ThreadDispatcherVoidAction
+        private class StopLoop : MessagePumpActionVoid
         {
-            public override void Execute()
-            {
-            }
         }
 
         private bool _isDisposed = false;
         public EventHandler<ThreadDispatcherExceptionEventArgs> Exception;
 
         private Thread _thread;
-        protected BlockingCollection<ThreadDispatcherAction> InternalPriorityQueue;
-        protected BlockingCollection<ThreadDispatcherAction> HighPriorityQueue;
-        protected BlockingCollection<ThreadDispatcherAction> NormalPriorityQueue;
-        protected BlockingCollection<ThreadDispatcherAction> LowPriorityQueue;
+        protected BlockingCollection<MessagePumpActionBase> InternalPriorityQueue;
+        protected BlockingCollection<MessagePumpActionBase> HighPriorityQueue;
+        protected BlockingCollection<MessagePumpActionBase> NormalPriorityQueue;
+        protected BlockingCollection<MessagePumpActionBase> LowPriorityQueue;
         private CancellationTokenSource _cancellationTokenSource;
 
         public bool IsRunning => _thread != null;
@@ -39,7 +37,7 @@ namespace DtronixPdf.Dispatcher
             {
                 while (true)
                 {
-                    var queueId = BlockingCollection<ThreadDispatcherAction>.TakeFromAny(queueList, out var action);
+                    var queueId = BlockingCollection<MessagePumpActionBase>.TakeFromAny(queueList, out var action);
 
                     // Check if this is a command.
                     if (queueId == 0)
@@ -50,9 +48,22 @@ namespace DtronixPdf.Dispatcher
                         continue;
                     }
 
+                    if (action == null)
+                        continue;
+
                     try
                     {
-                        action.Execute();
+                        if (action.CancellationToken.IsCancellationRequested)
+                        {
+                            action.SetCanceled();
+                            continue;
+                        }
+
+                        action.ExecuteCore();
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        action.SetCanceled();
                     }
                     catch (Exception e)
                     {
@@ -87,74 +98,79 @@ namespace DtronixPdf.Dispatcher
 
             _thread = new Thread(Pump);
 
-            InternalPriorityQueue = new BlockingCollection<ThreadDispatcherAction>();
-            HighPriorityQueue = new BlockingCollection<ThreadDispatcherAction>();
-            NormalPriorityQueue = new BlockingCollection<ThreadDispatcherAction>();
-            LowPriorityQueue = new BlockingCollection<ThreadDispatcherAction>();
+            InternalPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
+            HighPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
+            NormalPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
+            LowPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
 
             _cancellationTokenSource = new CancellationTokenSource();
             _thread.Start();
         }
-
-        public Task<TResult> QueueWithResult<TResult>(ThreadMessagePumpAction<TResult> action)
+        public Task QueueForCompletion(
+            Action action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
         {
-            return QueueWithResult(action, DispatcherPriority.Normal);
+            return QueueForCompletion(
+                new SimpleMessagePumpAction(action),
+                priority,
+                cancellationToken);
         }
 
-        public Task<TResult> QueueWithResult<TResult>(ThreadMessagePumpAction<TResult> action, DispatcherPriority priority)
+        public Task QueueForCompletion(
+            Action<CancellationToken> action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
         {
-            GetQueue(priority).Add(action);
+            return QueueForCompletion(
+                new SimpleMessagePumpAction(action),
+                priority,
+                cancellationToken);
+        }
+
+        public Task QueueForCompletion(
+            MessagePumpAction action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
+        {
+            action.CancellationToken = cancellationToken;
+            GetQueue(priority).Add(action, cancellationToken);
             return action.Result;
         }
 
-        public Task<TResult> QueueWithResult<TResult>(FuncMessagePumpAction<TResult> action)
+        public Task<TResult> QueueWithResult<TResult>(
+            Func<TResult> action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
         {
-            return QueueWithResult(action, DispatcherPriority.Normal);
+            return QueueWithResult(
+                new SimpleMessagePumpActionResult<TResult>(action),
+                priority,
+                cancellationToken);
         }
 
-        public Task<TResult> QueueWithResult<TResult>(FuncMessagePumpAction<TResult> action, DispatcherPriority priority)
+        public Task<TResult> QueueWithResult<TResult>(
+            Func<CancellationToken, TResult> action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
         {
-            GetQueue(priority).Add(action);
+            return QueueWithResult(
+                new SimpleMessagePumpActionResult<TResult>(action),
+                priority,
+                cancellationToken);
+        }
+
+        public Task<TResult> QueueWithResult<TResult>(
+            MessagePumpActionResult<TResult> action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
+        {
+            action.CancellationToken = cancellationToken;
+            GetQueue(priority).Add(action, cancellationToken);
             return action.Result;
         }
 
-        public void Queue(Action action)
-        {
-            Queue(action, DispatcherPriority.Normal);
-        }
-
-        public void Queue(Action action, DispatcherPriority priority)
-        {
-            var actionInstance = new ActionThreadDispatcherAction(action);
-            GetQueue(priority).Add(actionInstance);
-        }
-
-        public Task<bool> QueueForCompletion(Action action)
-        {
-            return QueueForCompletion(action, DispatcherPriority.Normal);
-        }
-
-        public Task<bool> QueueForCompletion(Action action, DispatcherPriority priority)
-        {
-            var actionInstance = new ActionThreadDispatcherAction(action);
-            GetQueue(priority).Add(actionInstance);
-            return actionInstance.Result;
-        }
-
-        public Task<TResult> QueueWithResult<TResult>(Func<TResult> func)
-        {
-            return QueueWithResult(func, DispatcherPriority.Normal);
-        }
-
-        public Task<TResult> QueueWithResult<TResult>(Func<TResult> func, DispatcherPriority priority)
-        {
-            var actionInstance = new FuncMessagePumpAction<TResult>(func);
-            GetQueue(priority).Add(actionInstance);
-            return actionInstance.Result;
-        }
-
-
-        private BlockingCollection<ThreadDispatcherAction> GetQueue(DispatcherPriority priority)
+        private BlockingCollection<MessagePumpActionBase> GetQueue(DispatcherPriority priority)
         {
             return priority switch
             {

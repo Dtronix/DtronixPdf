@@ -15,10 +15,10 @@ namespace DtronixPdfBenchmark
         private const string TestPdf = "TestPdf.pdf";
         static async Task Main(string[] args)
         {
-            if(!Directory.Exists("output"))
+            if (!Directory.Exists("output"))
                 Directory.CreateDirectory("output");
 
-            //await RenderViewportScaling();
+            await RenderViewportScaling();
             await OpenAndCloseBenchmark();
 
 
@@ -31,7 +31,7 @@ namespace DtronixPdfBenchmark
             var document = await PdfDocument.Load(TestPdf, null);
 
             sw.Restart();
-            var iterations = 100;
+            var iterations = 25;
 
             for (int i = 1; i < iterations; i++)
             {
@@ -84,42 +84,10 @@ namespace DtronixPdfBenchmark
             Console.WriteLine($"Open and Close {TestPdf} Complete");
         }
 
-        static async Task RenderTests()
-        {
-            var drawing = await PdfDocument.Load("drawing.pdf", null);
-            /*var testDocument = await PdfDocument.Load("testdoc1.pdf", null);
-
-            var newDocument = await PdfDocument.Create();
-
-            await newDocument.ImportPages(drawing, "1", 0);
-            await newDocument.ImportPages(testDocument, null, 1);
-            await newDocument.ImportPages(drawing, "1", 2);
-
-            var page = await newDocument.GetPage(1);
-            await newDocument.DeletePage(1);
-
-            page = await newDocument.GetPage(1);
-            var page = await drawing.GetPage(0);
-
-            var mem = Environment.WorkingSet;
-
-            sw.Restart();
-            var render = await page.Render(RenderFlags.RenderAnnotations);
-            Console.WriteLine($"RGB Memory: {Environment.WorkingSet - mem:##,###}; {sw.ElapsedMilliseconds:##,###}");
-
-            for (int i = 0; i < 10; i++)
-            {
-                sw.Restart();
-                mem = Environment.WorkingSet;
-                render = await page.Render(RenderFlags.RenderAnnotations);
-                Console.WriteLine($"RGB Memory: {Environment.WorkingSet - mem:##,###}; {sw.ElapsedMilliseconds:##,###}");
-            }*/
-        }
-
         static async Task ImportTests()
         {
             var drawing = await PdfDocument.Load("drawing.pdf", null);
-            /*var testDocument = await PdfDocument.Load("testdoc1.pdf", null);
+            var testDocument = await PdfDocument.Load("testdoc1.pdf", null);
 
             var newDocument = await PdfDocument.Create();
 
@@ -128,9 +96,9 @@ namespace DtronixPdfBenchmark
             await newDocument.ImportPages(drawing, "1", 2);
 
             var page = await newDocument.GetPage(1);
-            await newDocument.DeletePage(1);
 
-            page = await newDocument.GetPage(1);*/
+            await newDocument.Save("output/importtests.pdf");
+
         }
     }
 }

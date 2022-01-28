@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using DtronixPdf.Dispatcher;
 using PDFiumCore;
@@ -35,7 +33,7 @@ namespace DtronixPdf
         /// Initialized the PDFiumCore library.
         /// </summary>
         /// <returns></returns>
-        public static Task Initialize()
+        private static Task Initialize()
         {
             if (IsInitialized)
                 return Task.CompletedTask;
@@ -43,10 +41,7 @@ namespace DtronixPdf
             IsInitialized = true;
 
             // Initialize the library.
-            return Default.Dispatcher.QueueForCompletion(() =>
-            {
-                fpdfview.FPDF_InitLibrary();
-            });
+            return Default.Dispatcher.QueueForCompletion(fpdfview.FPDF_InitLibrary);
         }
 
         private static Task Destroy()

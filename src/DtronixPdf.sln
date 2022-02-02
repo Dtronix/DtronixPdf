@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtronixPdf", "DtronixPdf\DtronixPdf.csproj", "{23F0BD01-C9B9-4DC8-A444-978A4A91F5EE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtronixPdf.Tests", "DtronixPdfTests\DtronixPdf.Tests.csproj", "{1FE9E658-7FBB-4C89-8173-05DC58A68DE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtronixPdf.Tests", "DtronixPdf.Tests\DtronixPdf.Tests.csproj", "{1FE9E658-7FBB-4C89-8173-05DC58A68DE1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DtronixPdfBenchmark", "DtronixPdfBenchmark\DtronixPdfBenchmark.csproj", "{2639F2B5-D7A0-4566-B00A-BBFF0181C27F}"
 EndProject

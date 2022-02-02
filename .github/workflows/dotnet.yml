@@ -24,13 +24,10 @@ jobs:
     - name: Install .NET 5
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.102
+        dotnet-version: 6.0.101
         source-url: https://api.nuget.org/v3/index.json
       env:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        
-    - name: Download libraries
-      run: ./download_package.sh
 
     - name: Build
       run: dotnet build src/DtronixPdf -c Release

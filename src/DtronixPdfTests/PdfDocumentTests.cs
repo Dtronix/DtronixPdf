@@ -1,9 +1,10 @@
+using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace DtronixPdf.Tests
 {
-    public class Tests
+    public class PdfDocumentTests
     {
 
         [SetUp]
@@ -20,10 +21,20 @@ namespace DtronixPdf.Tests
 
 
         [Test]
-        public async Task Test1()
+        public async Task LoadsDocument()
         {
             await using var document = await PdfDocument.Load("TestPdf.pdf", null);
             Assert.AreEqual(1, document.Pages);
+        }
+
+        [Test]
+        public async Task SavesDocument()
+        {
+            await using var document = await PdfDocument.Load("TestPdf.pdf", null);
+            await using var sw = new MemoryStream();
+            await document.Save(sw);
+
+            Assert.Greater(sw.Length, 10000);
         }
 
 

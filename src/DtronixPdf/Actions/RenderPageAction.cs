@@ -15,7 +15,6 @@ namespace DtronixPdf.Actions
         private readonly RectangleF _viewport;
         private readonly RenderFlags _flags;
         private readonly Color? _backgroundColor;
-        private readonly bool _includeAlpha;
         private readonly ThreadDispatcher _dispatcher;
         private FpdfBitmapT _bitmap;
 
@@ -24,15 +23,13 @@ namespace DtronixPdf.Actions
             float scale,
             RectangleF viewport,
             RenderFlags flags,
-            Color? backgroundColor,
-            bool includeAlpha)
+            Color? backgroundColor)
         {
             _pageInstance = pageInstance;
             _scale = scale;
             _viewport = viewport;
             _flags = flags;
             _backgroundColor = backgroundColor;
-            _includeAlpha = includeAlpha;
             _dispatcher = dispatcher;
         }
 
@@ -45,7 +42,7 @@ namespace DtronixPdf.Actions
                 _bitmap = fpdfview.FPDFBitmapCreateEx(
                     (int)_viewport.Size.Width,
                     (int)_viewport.Size.Height,
-                    (int)(_includeAlpha ? FPDFBitmapFormat.BGRA : FPDFBitmapFormat.BGR),
+                    (int)FPDFBitmapFormat.BGRA,
                     IntPtr.Zero,
                     0);
 
@@ -66,50 +63,51 @@ namespace DtronixPdf.Actions
                     cancellationToken.ThrowIfCancellationRequested();
                 }
 
+                using var clipping = new FS_RECTF_
+                {
+                    Left = 0,
+                    Right = _viewport.Size.Width,
+                    Bottom = 0,
+                    Top = _viewport.Size.Height
+                };
+
                 // |          | a b 0 |
                 // | matrix = | c d 0 |
                 // |          | e f 1 |
-                using var matrix = new FS_MATRIX_();
-                using var clipping = new FS_RECTF_();
-
-                matrix.A = _scale;
-                matrix.B = 0;
-                matrix.C = 0;
-                matrix.D = _scale;
-                matrix.E = -_viewport.X;
-                matrix.F = -_viewport.Y;
-
-                clipping.Left = 0;
-                clipping.Right = _viewport.Size.Width;
-                clipping.Bottom = 0;
-                clipping.Top = _viewport.Size.Height;
+                using var matrix = new FS_MATRIX_
+                {
+                    A = _scale,
+                    B = 0,
+                    C = 0,
+                    D = _scale,
+                    E = -_viewport.X,
+                    F = -_viewport.Y
+                };
 
                 fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)_flags);
 
-                // Cancellation check;
                 cancellationToken.ThrowIfCancellationRequested();
+
                 var scan0 = fpdfview.FPDFBitmapGetBuffer(_bitmap);
 
-                var image = _includeAlpha
-                    ? (Image)Image.WrapMemory<Bgra32>(
-                        scan0.ToPointer(),
-                        (int)_viewport.Size.Width,
-                        (int)_viewport.Size.Height)
-                    : Image.WrapMemory<Bgr24>(
+                var image = Image.WrapMemory<Bgra32>(
                         scan0.ToPointer(),
                         (int)_viewport.Size.Width,
                         (int)_viewport.Size.Height);
-                
+
                 return new PdfBitmap(_bitmap, image, _dispatcher, _scale, _viewport);
             }
             catch (OperationCanceledException)
             {
-                fpdfview.FPDFBitmapDestroy(_bitmap);
+                if(_bitmap != null)
+                    fpdfview.FPDFBitmapDestroy(_bitmap);
                 throw;
             }
             catch (Exception ex)
             {
-                fpdfview.FPDFBitmapDestroy(_bitmap);
+                if (_bitmap != null)
+                    fpdfview.FPDFBitmapDestroy(_bitmap);
+
                 throw new Exception("Error rendering page. Check inner exception.", ex);
             }
         }

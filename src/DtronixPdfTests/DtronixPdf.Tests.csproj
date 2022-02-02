@@ -4,8 +4,13 @@
     <TargetFramework>net5.0</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-	
-	
+
+  <ItemGroup>
+    <None Include="..\..\pdf\TestPdf.pdf" Link="TestPdf.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 	<ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Include="NUnit" Version="3.13.2" />
@@ -14,7 +19,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DtronixPdf\DtronixPdf.csproj" />
-    <None Include="..\DtronixPdfBenchmark\TestPdf.pdf" Link="TestPdf.pdf">
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="PdfPageRendererTests\pixel_test_1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

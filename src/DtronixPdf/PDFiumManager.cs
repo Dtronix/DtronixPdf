@@ -33,18 +33,17 @@ namespace DtronixPdf
         /// Initialized the PDFiumCore library.
         /// </summary>
         /// <returns></returns>
-        private static Task Initialize()
+        internal static Task Initialize()
         {
             if (IsInitialized)
                 return Task.CompletedTask;
 
             IsInitialized = true;
-
             // Initialize the library.
             return Default.Dispatcher.QueueForCompletion(fpdfview.FPDF_InitLibrary);
         }
 
-        private static Task Destroy()
+        private static Task Unload()
         {
             if (!IsInitialized)
                 return Task.CompletedTask;
@@ -61,13 +60,10 @@ namespace DtronixPdf
             return Default.Dispatcher.QueueForCompletion(fpdfview.FPDF_DestroyLibrary);
         }
 
-        internal async Task AddDocument(PdfDocument document)
+        internal void AddDocument(PdfDocument document)
         {
             if (document == null)
                 throw new ArgumentNullException(nameof(document));
-
-            if (!IsInitialized)
-                await Initialize();
 
             lock (LoadedDocuments)
             {
@@ -75,13 +71,10 @@ namespace DtronixPdf
             }
         }
 
-        internal async Task RemoveDocument(PdfDocument document)
+        internal void RemoveDocument(PdfDocument document)
         {
             if (document == null)
                 throw new ArgumentNullException(nameof(document));
-
-            if (!IsInitialized)
-                await Initialize();
 
             lock (LoadedDocuments)
             {

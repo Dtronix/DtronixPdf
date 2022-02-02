@@ -49,10 +49,9 @@ namespace DtronixPdfBenchmark
 
 
                 await using var result = await page.Render(
-                    RenderFlags.RenderAnnotations, 
                     scale,
-                    viewport,
-                    false, Color.White, default, DispatcherPriority.Normal);
+                    Color.White,
+                    viewport);
                 await result.Image.SaveAsPngAsync($"output/{TestPdf}-{i}.png");
                 Console.WriteLine($"{sw.ElapsedMilliseconds:##,###} Milliseconds");
                 sw.Restart();

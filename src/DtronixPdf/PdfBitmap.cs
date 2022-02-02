@@ -4,6 +4,7 @@ using DtronixPdf.Dispatcher;
 using DtronixPdf.Dispatcher.Actions;
 using PDFiumCore;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace DtronixPdf
 {
@@ -17,7 +18,7 @@ namespace DtronixPdf
 
         public RectangleF Viewport { get; }
 
-        public Image Image { get; }
+        public Image<Bgra32> Image { get; }
 
         public bool IsDisposed { get; private set; }
 
@@ -31,7 +32,7 @@ namespace DtronixPdf
         /// <param name="viewport"></param>
         internal PdfBitmap(
             FpdfBitmapT pdfBitmap, 
-            Image image,
+            Image<Bgra32> image,
             ThreadDispatcher dispatcher,
             float scale, 
             RectangleF viewport)

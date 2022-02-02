@@ -59,13 +59,33 @@ namespace DtronixPdf
         }
 
         public async Task<PdfBitmap> Render(
-            RenderFlags flags,
             float scale,
-            RectangleF viewport,
-            bool alpha,
             Color? backgroundColor,
-            CancellationToken cancellationToken,
-            DispatcherPriority priority)
+            RenderFlags flags = RenderFlags.RenderAnnotations,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(PdfPage));
+
+            return await _dispatcher.QueueWithResult(
+                new RenderPageAction(
+                    _dispatcher,
+                    _pageInstance,
+                    scale,
+                    new RectangleF(0,0, Size.Width, Size.Height),
+                    flags,
+                    backgroundColor),
+                priority, cancellationToken);
+        }
+
+        public async Task<PdfBitmap> Render(
+            float scale,
+            Color? backgroundColor,
+            RectangleF viewport,
+            RenderFlags flags = RenderFlags.RenderAnnotations,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException(nameof(PdfPage));
@@ -80,8 +100,7 @@ namespace DtronixPdf
                     scale,
                     viewport,
                     flags,
-                    backgroundColor,
-                    alpha),
+                    backgroundColor),
                 priority, cancellationToken);
         }
 

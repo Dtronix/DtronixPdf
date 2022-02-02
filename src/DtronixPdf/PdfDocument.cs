@@ -42,7 +42,7 @@ namespace DtronixPdf
             CancellationToken cancellationToken = default)
         {
             await PDFiumCoreManager.Initialize();
-            
+
             int pages = -1;
             var result = await manager.Dispatcher.QueueWithResult(() =>
                 {
@@ -59,7 +59,7 @@ namespace DtronixPdf
                 Pages = pages,
             };
 
-            await manager.AddDocument(pdfDocument);
+            manager.AddDocument(pdfDocument);
 
             return pdfDocument;
         }
@@ -166,7 +166,7 @@ namespace DtronixPdf
                 fpdfview.FPDF_CloseDocument(_documentInstance);
             });
 
-            await _manager.RemoveDocument(this);
+            _manager.RemoveDocument(this);
         }
     }
 }

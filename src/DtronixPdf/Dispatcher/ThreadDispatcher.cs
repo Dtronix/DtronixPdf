@@ -96,7 +96,10 @@ namespace DtronixPdf.Dispatcher
             if (_thread != null)
                 throw new InvalidOperationException("Message pump already running.");
 
-            _thread = new Thread(Pump);
+            _thread = new Thread(Pump)
+            {
+                IsBackground = true
+            };
 
             InternalPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
             HighPriorityQueue = new BlockingCollection<MessagePumpActionBase>();

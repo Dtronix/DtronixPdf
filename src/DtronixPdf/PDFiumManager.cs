@@ -25,7 +25,7 @@ namespace DtronixPdf
         {
             LoadedManagers.Add(this);
 
-            Dispatcher = new ThreadDispatcher();
+            Dispatcher = new ThreadDispatcher(1);
             Dispatcher.Start();
         }
 

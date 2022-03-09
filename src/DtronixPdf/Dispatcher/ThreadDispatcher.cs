@@ -8,6 +8,8 @@ namespace DtronixPdf.Dispatcher
 {
     public class ThreadDispatcher : IDisposable
     {
+        private readonly int _threadCount;
+
         private class StopLoop : MessagePumpActionVoid
         {
         }
@@ -15,14 +17,19 @@ namespace DtronixPdf.Dispatcher
         private bool _isDisposed = false;
         public EventHandler<ThreadDispatcherExceptionEventArgs> Exception;
 
-        private Thread _thread;
+        internal Thread[] Threads;
         protected BlockingCollection<MessagePumpActionBase> InternalPriorityQueue;
         protected BlockingCollection<MessagePumpActionBase> HighPriorityQueue;
         protected BlockingCollection<MessagePumpActionBase> NormalPriorityQueue;
         protected BlockingCollection<MessagePumpActionBase> LowPriorityQueue;
         private CancellationTokenSource _cancellationTokenSource;
 
-        public bool IsRunning => _thread != null;
+        public bool IsRunning => Threads != null;
+
+        public ThreadDispatcher(int threadCount)
+        {
+            _threadCount = threadCount;
+        }
 
         private void Pump()
         {
@@ -81,25 +88,50 @@ namespace DtronixPdf.Dispatcher
             }
         }
 
-        public void Stop()
+        /// <summary>
+        /// Stops the thread dispatcher and joins all the threads.
+        /// </summary>
+        /// <param name="timeout">Timeout for waiting on each thread.</param>
+        /// <returns>True on successful stopping of the dispatcher threads, otherwise false.</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public bool Stop(int timeout = 1000)
         {
-            if (_thread == null)
+            if (Threads == null)
                 throw new InvalidOperationException("Message pump is not running.");
 
-            InternalPriorityQueue.TryAdd(new StopLoop());
+            // Send enough StopLoop commands to end all the threads.
+            for (int i = 0; i < _threadCount; i++)
+                InternalPriorityQueue.TryAdd(new StopLoop());
+            
+
             _cancellationTokenSource.Cancel();
-            _thread = null;
+            InternalPriorityQueue.CompleteAdding();
+            HighPriorityQueue.CompleteAdding();
+            NormalPriorityQueue.CompleteAdding();
+            LowPriorityQueue.CompleteAdding();
+
+            var stopSuccessful = true;
+            // Join all the threads back to ensure they are complete.
+            foreach (var thread in Threads)
+            {
+                // If the thread join times out, return a failure result to the caller.
+                if (!thread.Join(timeout))
+                    stopSuccessful = false;
+            }
+            
+            Threads = null;
+
+            return stopSuccessful;
         }
 
+        /// <summary>
+        /// Starts the dispatcher and waits for the startup of each thread.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         public void Start()
         {
-            if (_thread != null)
+            if (Threads != null)
                 throw new InvalidOperationException("Message pump already running.");
-
-            _thread = new Thread(Pump)
-            {
-                IsBackground = true
-            };
 
             InternalPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
             HighPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
@@ -107,7 +139,17 @@ namespace DtronixPdf.Dispatcher
             LowPriorityQueue = new BlockingCollection<MessagePumpActionBase>();
 
             _cancellationTokenSource = new CancellationTokenSource();
-            _thread.Start();
+
+            Threads = new Thread[_threadCount];
+            for (int i = 0; i < _threadCount; i++)
+            {
+                Threads[i] = new Thread(Pump)
+                {
+                    IsBackground = true
+                };
+                Threads[i].Start();
+            }
+            
         }
         public Task QueueForCompletion(
             Action action,
@@ -139,6 +181,26 @@ namespace DtronixPdf.Dispatcher
             action.CancellationToken = cancellationToken;
             GetQueue(priority).Add(action, cancellationToken);
             return action.Result;
+        }
+
+        public Task QueueForCompletion(
+            Func<Task> action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
+        {
+            var messageTask = new SimpleMessagePumpTask(action);
+            GetQueue(priority).Add(messageTask, cancellationToken);
+            return messageTask.Result;
+        }
+
+        public Task QueueForCompletion(
+            Func<CancellationToken, Task> action,
+            DispatcherPriority priority = DispatcherPriority.Normal,
+            CancellationToken cancellationToken = default)
+        {
+            var messageTask = new SimpleMessagePumpTask(action);
+            GetQueue(priority).Add(messageTask, cancellationToken);
+            return messageTask.Result;
         }
 
         public Task<TResult> QueueWithResult<TResult>(

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DtronixPdf.Dispatcher;
-using DtronixPdf.Dispatcher.Actions;
+using DtronixCommon.Threading.Dispatcher;
+using DtronixCommon.Threading.Dispatcher.Actions;
 using PDFiumCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -51,7 +51,7 @@ namespace DtronixPdf
 
             IsDisposed = true;
 
-            await _dispatcher.QueueForCompletion(new SimpleMessagePumpAction(() =>
+            await _dispatcher.Queue(new SimpleMessagePumpAction(() =>
             {
                 fpdfview.FPDFBitmapDestroy(_pdfBitmap);
             }));

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using DtronixPdf.Actions;
-using DtronixPdf.Dispatcher;
 using PDFiumCore;
-using SixLabors.ImageSharp;
 
 namespace DtronixPdf
 {
@@ -23,7 +19,7 @@ namespace DtronixPdf
         /// <returns></returns>
         public Task SetRotation(int rotation)
         {
-            return _dispatcher.QueueForCompletion(() => fpdf_edit.FPDFPageSetRotation(_pageInstance, rotation));
+            return _dispatcher.Queue(() => fpdf_edit.FPDFPageSetRotation(_pageInstance, rotation));
         }
 
         /// <summary>
@@ -37,7 +33,7 @@ namespace DtronixPdf
         /// </returns>
         public Task<int> GetRotation()
         {
-            return _dispatcher.QueueWithResult(() => fpdf_edit.FPDFPageGetRotation(_pageInstance));
+            return _dispatcher.QueueResult(_ => fpdf_edit.FPDFPageGetRotation(_pageInstance));
         }
 
         /// <summary>
@@ -52,7 +48,7 @@ namespace DtronixPdf
         /// <returns></returns>
         public Task Delete()
         {
-            return _dispatcher.QueueForCompletion(() => fpdf_edit.FPDFPageDelete(_documentInstance, InitialIndex));
+            return _dispatcher.Queue(() => fpdf_edit.FPDFPageDelete(_documentInstance, InitialIndex));
         }
     }
 }

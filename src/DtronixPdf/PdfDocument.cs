@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using DtronixPdf.Actions;
-using DtronixPdf.Dispatcher;
-using DtronixPdf.Dispatcher.Actions;
 using PDFiumCore;
 
 
@@ -44,12 +39,12 @@ namespace DtronixPdf
             await PDFiumCoreManager.Initialize();
 
             int pages = -1;
-            var result = await manager.Dispatcher.QueueWithResult(() =>
+            var result = await manager.Dispatcher.QueueResult(_ =>
                 {
                     var document = fpdfview.FPDF_LoadDocument(path, password);
                     pages = fpdfview.FPDF_GetPageCount(document);
                     return document;
-                },DispatcherPriority.Normal, cancellationToken);
+                }, cancellationToken: cancellationToken);
 
             if (result == null)
                 return null;
@@ -71,7 +66,7 @@ namespace DtronixPdf
 
         public static async Task<PdfDocument> Create(PDFiumCoreManager manager)
         {
-            var result = await manager.Dispatcher.QueueWithResult(fpdf_edit.FPDF_CreateNewDocument);
+            var result = await manager.Dispatcher.QueueResult(_ => fpdf_edit.FPDF_CreateNewDocument());
 
             if (result == null)
                 return null;
@@ -95,7 +90,7 @@ namespace DtronixPdf
         /// <returns>True on success, false on failure.</returns>
         public Task<bool> ImportPages(PdfDocument document, string pageRange, int insertIndex)
         {
-            return _manager.Dispatcher.QueueWithResult(() =>
+            return _manager.Dispatcher.QueueResult(_ =>
             {
                 var result = fpdf_ppo.FPDF_ImportPages(_documentInstance, document._documentInstance, pageRange, insertIndex);
                 return result == 1;
@@ -122,7 +117,7 @@ namespace DtronixPdf
         /// <returns>True on success, false on failure.</returns>
         public Task DeletePage(int pageIndex)
         {
-            return _manager.Dispatcher.QueueForCompletion(() => fpdf_edit.FPDFPageDelete(_documentInstance, pageIndex));
+            return _manager.Dispatcher.Queue(() => fpdf_edit.FPDFPageDelete(_documentInstance, pageIndex));
             
         }
 
@@ -153,7 +148,7 @@ namespace DtronixPdf
             #define FPDF_REMOVE_SECURITY 3
              */
 
-            var result = await _manager.Dispatcher.QueueWithResult(() =>
+            var result = await _manager.Dispatcher.QueueResult(_ =>
                 fpdf_save.FPDF_SaveAsCopy(_documentInstance, writer, 1));
 
             return result == 1;
@@ -161,7 +156,7 @@ namespace DtronixPdf
 
         public async ValueTask DisposeAsync()
         {
-            await _manager.Dispatcher.QueueForCompletion(() =>
+            await _manager.Dispatcher.Queue(() =>
             {
                 fpdfview.FPDF_CloseDocument(_documentInstance);
             });

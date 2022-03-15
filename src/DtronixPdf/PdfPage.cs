@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using DtronixCommon.Threading.Dispatcher;
+using DtronixCommon.Threading.Dispatcher.Actions;
 using DtronixPdf.Actions;
-using DtronixPdf.Dispatcher;
-using DtronixPdf.Dispatcher.Actions;
 using PDFiumCore;
 using SixLabors.ImageSharp;
 
@@ -32,7 +32,7 @@ namespace DtronixPdf
             FpdfDocumentT documentInstance,
             int pageIndex)
         {
-            var loadPageResult = await dispatcher.QueueWithResult(() => fpdfview.FPDF_LoadPage(documentInstance, pageIndex));
+            var loadPageResult = await dispatcher.QueueResult(_ => fpdfview.FPDF_LoadPage(documentInstance, pageIndex));
             if (loadPageResult == null)
                 throw new Exception($"Failed to open page for page index {pageIndex}.");
 
@@ -41,7 +41,7 @@ namespace DtronixPdf
                 InitialIndex = pageIndex
             };
 
-            var getPageSizeResult = await dispatcher.QueueWithResult(() =>
+            var getPageSizeResult = await dispatcher.QueueResult(_ =>
             {
                 var size = new FS_SIZEF_();
                 
@@ -68,15 +68,15 @@ namespace DtronixPdf
             if (_isDisposed)
                 throw new ObjectDisposedException(nameof(PdfPage));
 
-            return await _dispatcher.QueueWithResult(
+            return await _dispatcher.QueueResult(
                 new RenderPageAction(
                     _dispatcher,
                     _pageInstance,
                     scale,
                     new RectangleF(0,0, Size.Width, Size.Height),
                     flags,
-                    backgroundColor),
-                priority, cancellationToken);
+                    backgroundColor,
+                    cancellationToken));
         }
 
         public async Task<PdfBitmap> Render(
@@ -93,15 +93,15 @@ namespace DtronixPdf
             if (viewport.IsEmpty)
                 throw new ArgumentException("Viewport is empty", nameof(viewport));
 
-            return await _dispatcher.QueueWithResult(
+            return await _dispatcher.QueueResult(
                 new RenderPageAction(
                     _dispatcher,
                     _pageInstance,
                     scale,
                     viewport,
                     flags,
-                    backgroundColor),
-                priority, cancellationToken);
+                    backgroundColor,
+                    cancellationToken));
         }
 
         public async ValueTask DisposeAsync()
@@ -111,7 +111,7 @@ namespace DtronixPdf
 
             _isDisposed = true;
 
-            await _dispatcher.QueueForCompletion(new SimpleMessagePumpAction(() =>
+            await _dispatcher.Queue(new SimpleMessagePumpAction(() =>
             {
                 fpdfview.FPDF_ClosePage(_pageInstance);
             }));

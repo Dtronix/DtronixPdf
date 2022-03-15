@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using DtronixPdf;
-using DtronixPdf.Dispatcher;
-using PDFiumCore;
 using SixLabors.ImageSharp;
 
 namespace DtronixPdfBenchmark

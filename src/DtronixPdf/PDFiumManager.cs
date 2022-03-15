@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DtronixPdf.Dispatcher;
+using DtronixCommon.Threading.Dispatcher;
 using PDFiumCore;
 
 namespace DtronixPdf
@@ -40,7 +40,7 @@ namespace DtronixPdf
 
             IsInitialized = true;
             // Initialize the library.
-            return Default.Dispatcher.QueueForCompletion(fpdfview.FPDF_InitLibrary);
+            return Default.Dispatcher.Queue(fpdfview.FPDF_InitLibrary);
         }
 
         private static Task Unload()
@@ -57,7 +57,7 @@ namespace DtronixPdf
             IsInitialized = false;
 
             // Initialize the library.
-            return Default.Dispatcher.QueueForCompletion(fpdfview.FPDF_DestroyLibrary);
+            return Default.Dispatcher.Queue(fpdfview.FPDF_DestroyLibrary);
         }
 
         internal void AddDocument(PdfDocument document)

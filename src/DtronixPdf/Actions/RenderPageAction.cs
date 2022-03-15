@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
-using DtronixPdf.Dispatcher;
-using DtronixPdf.Dispatcher.Actions;
+using DtronixCommon.Threading.Dispatcher;
+using DtronixCommon.Threading.Dispatcher.Actions;
 using PDFiumCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -23,7 +23,9 @@ namespace DtronixPdf.Actions
             float scale,
             RectangleF viewport,
             RenderFlags flags,
-            Color? backgroundColor)
+            Color? backgroundColor,
+            CancellationToken cancellationToken) 
+            : base(cancellationToken)
         {
             _pageInstance = pageInstance;
             _scale = scale;

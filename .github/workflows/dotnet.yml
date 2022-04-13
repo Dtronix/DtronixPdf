@@ -53,7 +53,9 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         name: "DtronixPdf ${{ steps.tagName.outputs.tag }} Released"
-        files: artifacts/*.nupkg
+        files: |
+          artifacts/*.nupkg
+          artifacts/*.snupkg
       
     - name: Push Nuget packages
       if: startsWith(github.ref, 'refs/tags/')

@@ -4,6 +4,16 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>1.0.1.1</Version>
+		<Company>Dtronix</Company>
+		<Product>Dtronix PDF</Product>
+		<Description>Tool to view and perform common modifications to PDFs. Based on PDFium.</Description>
+		<Copyright>Copyright © Dtronix 2022</Copyright>
+		<Authors>DJGosnell</Authors>
+		<PackageProjectUrl>https://github.com/Dtronix/DtronixPdf</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Dtronix/DtronixPdf</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<PackageTags>pdf editor modify viewer export</PackageTags>
  		<IncludeSymbols>true</IncludeSymbols>
  		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
  		<EmbedUntrackedSources>true</EmbedUntrackedSources>

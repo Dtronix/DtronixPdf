@@ -31,24 +31,35 @@ namespace DtronixPdf
             return Load(path, password, PDFiumCoreManager.Default, cancellationToken);
         }
 
-        public static async Task<PdfDocument> Load(Stream pdfStream, string password, CancellationToken cancellationToken = default)
+        public static async Task<PdfDocument> Load(
+            Stream pdfStream,
+            string password,
+            CancellationToken cancellationToken = default)
         {
-            using var ms = new MemoryStream();
-            await pdfStream.CopyToAsync(ms, cancellationToken);
-            var fileBytes = ms.ToArray();
+            await PDFiumCoreManager.Initialize();
 
-            return await Load(fileBytes, password, cancellationToken);
+            using var ms = new MemoryStream();
+            await pdfStream.CopyToAsync(ms);
+
+            return await Load(ms.ToArray(), password, PDFiumCoreManager.Default, cancellationToken);
         }
 
-        public static async Task<PdfDocument> Load(byte[] fileBytes, string password, CancellationToken cancellationToken = default)
+        public static async Task<PdfDocument> Load(
+            byte[] fileBytes,
+            string password,
+            PDFiumCoreManager manager,
+            CancellationToken cancellationToken = default)
         {
             await PDFiumCoreManager.Initialize();
 
             var ptr = Marshal.AllocHGlobal(fileBytes.Length);
             Marshal.Copy(fileBytes, 0, ptr, fileBytes.Length);
-            var doc = fpdfview.FPDF_LoadMemDocument(ptr, fileBytes.Length, null);
 
-            return new PdfDocument(PDFiumCoreManager.Default, doc);
+            return await Load(manager, _ =>
+            {
+                var document = fpdfview.FPDF_LoadMemDocument(ptr, fileBytes.Length, password);
+                return (document, fpdfview.FPDF_GetPageCount(document));
+            }, cancellationToken);
         }
 
         public static async Task<PdfDocument> Load(
@@ -59,20 +70,26 @@ namespace DtronixPdf
         {
             await PDFiumCoreManager.Initialize();
 
-            int pages = -1;
-            var result = await manager.Dispatcher.QueueResult(_ =>
-                {
-                    var document = fpdfview.FPDF_LoadDocument(path, password);
-                    pages = fpdfview.FPDF_GetPageCount(document);
-                    return document;
-                }, cancellationToken: cancellationToken);
+            return await Load(manager, _ =>
+            {
+                var document = fpdfview.FPDF_LoadDocument(path, password);
+                return (document, fpdfview.FPDF_GetPageCount(document));
+            }, cancellationToken);
+        }
 
-            if (result == null)
+        private static async Task<PdfDocument> Load(
+            PDFiumCoreManager manager,
+            Func<CancellationToken, (FpdfDocumentT Document, int Pages)> documentInitiator,
+            CancellationToken cancellationToken = default)
+        {
+            await PDFiumCoreManager.Initialize();
+            var result = await manager.Dispatcher.QueueResult(documentInitiator, cancellationToken: cancellationToken);
+            if (result.Document == null)
                 return null;
 
-            var pdfDocument = new PdfDocument(manager, result)
+            var pdfDocument = new PdfDocument(manager, result.Document)
             {
-                Pages = pages,
+                Pages = result.Pages,
             };
 
             manager.AddDocument(pdfDocument);

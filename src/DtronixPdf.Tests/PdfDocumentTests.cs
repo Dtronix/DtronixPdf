@@ -37,6 +37,12 @@ namespace DtronixPdf.Tests
             Assert.Greater(sw.Length, 10000);
         }
 
-
+        [Test]
+        public async Task LoadsDocumentFromStream()
+        {
+            using var fileStream = File.OpenRead("TestPdf.pdf");
+            await using var document = await PdfDocument.Load(fileStream, null);
+            Assert.AreEqual(1, document.Pages);
+        }
     }
 }

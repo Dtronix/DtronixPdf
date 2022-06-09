@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using PDFiumCore;
@@ -28,6 +29,26 @@ namespace DtronixPdf
             CancellationToken cancellationToken = default)
         {
             return Load(path, password, PDFiumCoreManager.Default, cancellationToken);
+        }
+
+        public static async Task<PdfDocument> Load(Stream pdfStream, string password, CancellationToken cancellationToken = default)
+        {
+            using var ms = new MemoryStream();
+            await pdfStream.CopyToAsync(ms, cancellationToken);
+            var fileBytes = ms.ToArray();
+
+            return await Load(fileBytes, password, cancellationToken);
+        }
+
+        public static async Task<PdfDocument> Load(byte[] fileBytes, string password, CancellationToken cancellationToken = default)
+        {
+            await PDFiumCoreManager.Initialize();
+
+            var ptr = Marshal.AllocHGlobal(fileBytes.Length);
+            Marshal.Copy(fileBytes, 0, ptr, fileBytes.Length);
+            var doc = fpdfview.FPDF_LoadMemDocument(ptr, fileBytes.Length, null);
+
+            return new PdfDocument(PDFiumCoreManager.Default, doc);
         }
 
         public static async Task<PdfDocument> Load(

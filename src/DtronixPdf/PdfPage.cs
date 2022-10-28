@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using DtronixCommon;
 using DtronixCommon.Threading.Dispatcher;
 using DtronixCommon.Threading.Dispatcher.Actions;
 using DtronixPdf.Actions;
 using PDFiumCore;
-using SixLabors.ImageSharp;
 
 namespace DtronixPdf
 {
@@ -16,7 +16,8 @@ namespace DtronixPdf
         private readonly FpdfPageT _pageInstance;
         private bool _isDisposed = false;
 
-        public SizeF Size { get; private set; }
+        public float Width { get; private set; }
+        public float Height { get; private set; }
 
         public int InitialIndex { get; private set; }
 
@@ -27,12 +28,13 @@ namespace DtronixPdf
             _pageInstance = pageInstance;
         }
 
-        internal static async Task<PdfPage> Create(
+        internal static async Task<PdfPage> CreateAsync(
             ThreadDispatcher dispatcher,
             FpdfDocumentT documentInstance,
             int pageIndex)
         {
-            var loadPageResult = await dispatcher.QueueResult(_ => fpdfview.FPDF_LoadPage(documentInstance, pageIndex));
+            var loadPageResult = await dispatcher.QueueResult(_ => fpdfview.FPDF_LoadPage(documentInstance, pageIndex))
+                .ConfigureAwait(false);
             if (loadPageResult == null)
                 throw new Exception($"Failed to open page for page index {pageIndex}.");
 
@@ -48,21 +50,20 @@ namespace DtronixPdf
                 var result = fpdfview.FPDF_GetPageSizeByIndexF(documentInstance, pageIndex, size);
 
                 return result == 0 ? null : size;
-            });
+            }).ConfigureAwait(false);
 
             if (getPageSizeResult == null)
                 throw new Exception($"Could not retrieve page size for page index {pageIndex}.");
-
-            page.Size = new SizeF(getPageSizeResult.Width, getPageSizeResult.Height);
+            page.Width = getPageSizeResult.Width;
+            page.Height = getPageSizeResult.Height;
 
             return page;
         }
 
-        public async Task<PdfBitmap> Render(
+        public async Task<PdfBitmap> RenderAsync(
             float scale,
-            Color? backgroundColor,
+            uint? argbBackground,
             RenderFlags flags = RenderFlags.RenderAnnotations,
-            DispatcherPriority priority = DispatcherPriority.Normal,
             CancellationToken cancellationToken = default)
         {
             if (_isDisposed)
@@ -73,18 +74,17 @@ namespace DtronixPdf
                     _dispatcher,
                     _pageInstance,
                     scale,
-                    new RectangleF(0,0, Size.Width, Size.Height),
+                    new Boundary(0,0, Width, Height),
                     flags,
-                    backgroundColor,
-                    cancellationToken));
+                    argbBackground,
+                    cancellationToken)).ConfigureAwait(false);
         }
 
-        public async Task<PdfBitmap> Render(
+        public async Task<PdfBitmap> RenderAsync(
             float scale,
-            Color? backgroundColor,
-            RectangleF viewport,
+            uint? argbBackground,
+            Boundary viewport,
             RenderFlags flags = RenderFlags.RenderAnnotations,
-            DispatcherPriority priority = DispatcherPriority.Normal,
             CancellationToken cancellationToken = default)
         {
             if (_isDisposed)
@@ -100,8 +100,8 @@ namespace DtronixPdf
                     scale,
                     viewport,
                     flags,
-                    backgroundColor,
-                    cancellationToken));
+                    argbBackground,
+                    cancellationToken)).ConfigureAwait(false);
         }
 
         public async ValueTask DisposeAsync()
@@ -114,7 +114,7 @@ namespace DtronixPdf
             await _dispatcher.Queue(new SimpleMessagePumpAction(() =>
             {
                 fpdfview.FPDF_ClosePage(_pageInstance);
-            }));
+            })).ConfigureAwait(false);
         }
     }
 }

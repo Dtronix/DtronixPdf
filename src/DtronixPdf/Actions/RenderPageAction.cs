@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Net.Mime;
 using System.Threading;
+using DtronixCommon;
 using DtronixCommon.Threading.Dispatcher;
 using DtronixCommon.Threading.Dispatcher.Actions;
 using PDFiumCore;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace DtronixPdf.Actions
 {
@@ -12,18 +12,18 @@ namespace DtronixPdf.Actions
     {
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
-        private readonly RectangleF _viewport;
+        private readonly Boundary _viewport;
         private readonly RenderFlags _flags;
-        private readonly Color? _backgroundColor;
+        private readonly uint? _backgroundColor = UInt32.MaxValue;
         private readonly ThreadDispatcher _dispatcher;
         private FpdfBitmapT _bitmap;
 
         public RenderPageAction(ThreadDispatcher dispatcher,
             FpdfPageT pageInstance,
             float scale,
-            RectangleF viewport,
+            Boundary viewport,
             RenderFlags flags,
-            Color? backgroundColor,
+            uint? backgroundColor,
             CancellationToken cancellationToken) 
             : base(cancellationToken)
         {
@@ -31,7 +31,7 @@ namespace DtronixPdf.Actions
             _scale = scale;
             _viewport = viewport;
             _flags = flags;
-            _backgroundColor = backgroundColor;
+            _backgroundColor = backgroundColor ?? UInt32.MaxValue;
             _dispatcher = dispatcher;
         }
 
@@ -42,8 +42,8 @@ namespace DtronixPdf.Actions
                 cancellationToken.ThrowIfCancellationRequested();
 
                 _bitmap = fpdfview.FPDFBitmapCreateEx(
-                    (int)_viewport.Size.Width,
-                    (int)_viewport.Size.Height,
+                    (int)_viewport.Width,
+                    (int)_viewport.Height,
                     (int)FPDFBitmapFormat.BGRA,
                     IntPtr.Zero,
                     0);
@@ -58,9 +58,9 @@ namespace DtronixPdf.Actions
                         _bitmap,
                         0, 
                         0, 
-                        (int)_viewport.Size.Width,
-                        (int)_viewport.Size.Height,
-                        _backgroundColor.Value.ToPixel<Argb32>().Argb);
+                        (int)_viewport.Width,
+                        (int)_viewport.Height,
+                        _backgroundColor.Value);
 
                     cancellationToken.ThrowIfCancellationRequested();
                 }
@@ -68,9 +68,9 @@ namespace DtronixPdf.Actions
                 using var clipping = new FS_RECTF_
                 {
                     Left = 0,
-                    Right = _viewport.Size.Width,
+                    Right = _viewport.Width,
                     Bottom = 0,
-                    Top = _viewport.Size.Height
+                    Top = _viewport.Height
                 };
 
                 // |          | a b 0 |
@@ -82,22 +82,15 @@ namespace DtronixPdf.Actions
                     B = 0,
                     C = 0,
                     D = _scale,
-                    E = -_viewport.X,
-                    F = -_viewport.Y
+                    E = -_viewport.MinX,
+                    F = -_viewport.MinY
                 };
 
                 fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)_flags);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var scan0 = fpdfview.FPDFBitmapGetBuffer(_bitmap);
-
-                var image = Image.WrapMemory<Bgra32>(
-                        scan0.ToPointer(),
-                        (int)_viewport.Size.Width,
-                        (int)_viewport.Size.Height);
-
-                return new PdfBitmap(_bitmap, image, _dispatcher, _scale, _viewport);
+                return new PdfBitmap(_bitmap, _dispatcher, _scale, _viewport);
             }
             catch (OperationCanceledException)
             {

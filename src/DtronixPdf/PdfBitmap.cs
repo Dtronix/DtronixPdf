@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using DtronixCommon;
 using DtronixCommon.Threading.Dispatcher;
 using DtronixCommon.Threading.Dispatcher.Actions;
 using PDFiumCore;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace DtronixPdf
 {
@@ -16,9 +15,9 @@ namespace DtronixPdf
 
         public float Scale { get; }
 
-        public RectangleF Viewport { get; }
+        public Boundary Viewport { get; }
 
-        public Image<Bgra32> Image { get; }
+        public IntPtr Pointer { get; }
 
         public bool IsDisposed { get; private set; }
 
@@ -31,18 +30,20 @@ namespace DtronixPdf
         /// <param name="scale"></param>
         /// <param name="viewport"></param>
         internal PdfBitmap(
-            FpdfBitmapT pdfBitmap, 
-            Image<Bgra32> image,
+            FpdfBitmapT pdfBitmap,
             ThreadDispatcher dispatcher,
             float scale, 
-            RectangleF viewport)
+            Boundary viewport)
         {
             _pdfBitmap = pdfBitmap;
+            Pointer = fpdfview.FPDFBitmapGetBuffer(_pdfBitmap);
             _dispatcher = dispatcher;
             Scale = scale;
             Viewport = viewport;
-            Image = image;
         }
+
+
+
 
         public async ValueTask DisposeAsync()
         {
@@ -54,7 +55,7 @@ namespace DtronixPdf
             await _dispatcher.Queue(new SimpleMessagePumpAction(() =>
             {
                 fpdfview.FPDFBitmapDestroy(_pdfBitmap);
-            }));
+            })).ConfigureAwait(false);
         }
     }
 }

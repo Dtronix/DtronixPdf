@@ -26,7 +26,7 @@ namespace DtronixPdf
 
         public async ValueTask DisposeAsync()
         {
-            await PdfBitmap.DisposeAsync();
+            await PdfBitmap.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

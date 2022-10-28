@@ -24,16 +24,19 @@ jobs:
     - name: Install .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.*
+        dotnet-version: 6.0.*
         source-url: https://api.nuget.org/v3/index.json
       env:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     - name: Build
-      run: dotnet build src/DtronixPdf -c Release
+      run: dotnet build src -c Release
       
-    - name: Pack
+    - name: Pack DtronixPdf
       run: dotnet pack src/DtronixPdf -c Release -o ./artifacts
+      
+    - name: Pack DtronixPdf.ImageSharp
+      run: dotnet pack src/DtronixPdf.ImageSharp -c Release -o ./artifacts
       
     - name: Unit tests
       run: dotnet test src/DtronixPdf.Tests -c Release
@@ -41,7 +44,9 @@ jobs:
     - name: Export artifacts
       uses: actions/upload-artifact@v2
       with:
-        path: artifacts/*.nupkg
+        path: |
+          artifacts/*.nupkg
+          artifacts/*.snupkg
         
     - name: Get tag name
       if: startsWith(github.ref, 'refs/tags/')

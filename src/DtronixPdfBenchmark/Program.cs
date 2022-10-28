@@ -2,8 +2,11 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using DtronixCommon;
 using DtronixPdf;
+using DtronixPdf.ImageSharp;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace DtronixPdfBenchmark
 {
@@ -26,31 +29,31 @@ namespace DtronixPdfBenchmark
         static async Task RenderViewportScaling()
         {
             Console.WriteLine($"RenderViewport Benchmark {TestPdf}");
-            var document = await PdfDocument.Load(TestPdf, null);
+            var document = await PdfDocument.LoadAsync(TestPdf, null);
 
             sw.Restart();
             var iterations = 25;
 
             for (int i = 1; i < iterations; i++)
             {
-                await using var page = await document.GetPage(0);
+                await using var page = await document.GetPageAsync(0);
                 
                 float scale = i * 0.25f;
                 Point center = new Point(0, 0);
                 Size size = new Size(1920, 1080);
 
-                var viewport = new RectangleF(
-                    (int)((page.Size.Width / 2 - size.Width / 2 + center.X) * scale + size.Width / 2 * (scale - 1)),
-                    (int)((page.Size.Height / 2 - size.Height / 2 - center.Y) * scale + size.Height / 2 * (scale - 1)),
+                var viewport = new Boundary(
+                    (int)((page.Width / 2 - size.Width / 2 + center.X) * scale + size.Width / 2 * (scale - 1)),
+                    (int)((page.Height / 2 - size.Height / 2 - center.Y) * scale + size.Height / 2 * (scale - 1)),
                     size.Width,
                     size.Height);
 
 
-                await using var result = await page.Render(
+                await using var result = await page.RenderAsync(
                     scale,
-                    Color.White,
+                    Color.White.ToPixel<Argb32>().Argb,
                     viewport);
-                await result.Image.SaveAsPngAsync($"output/{TestPdf}-{i}.png");
+                await result.GetImage().SaveAsPngAsync($"output/{TestPdf}-{i}.png");
                 Console.WriteLine($"{sw.ElapsedMilliseconds:##,###} Milliseconds");
                 sw.Restart();
             }
@@ -69,8 +72,8 @@ namespace DtronixPdfBenchmark
 
             for (int i = 1; i < iterations; i++)
             {
-                await using var document = await PdfDocument.Load(TestPdf, null);
-                await using var page = await document.GetPage(0);
+                await using var document = await PdfDocument.LoadAsync(TestPdf, null);
+                await using var page = await document.GetPageAsync(0);
 
                 Console.WriteLine($"{sw.ElapsedMilliseconds:##,###} Milliseconds");
                 sw.Restart();
@@ -83,18 +86,18 @@ namespace DtronixPdfBenchmark
 
         static async Task ImportTests()
         {
-            var drawing = await PdfDocument.Load("drawing.pdf", null);
-            var testDocument = await PdfDocument.Load("testdoc1.pdf", null);
+            var drawing = await PdfDocument.LoadAsync("drawing.pdf", null);
+            var testDocument = await PdfDocument.LoadAsync("testdoc1.pdf", null);
 
-            var newDocument = await PdfDocument.Create();
+            var newDocument = await PdfDocument.CreateAsync();
 
-            await newDocument.ImportPages(drawing, "1", 0);
-            await newDocument.ImportPages(testDocument, null, 1);
-            await newDocument.ImportPages(drawing, "1", 2);
+            await newDocument.ImportPagesAsync(drawing, "1", 0);
+            await newDocument.ImportPagesAsync(testDocument, null, 1);
+            await newDocument.ImportPagesAsync(drawing, "1", 2);
 
-            var page = await newDocument.GetPage(1);
+            var page = await newDocument.GetPageAsync(1);
 
-            await newDocument.Save("output/importtests.pdf");
+            await newDocument.SaveAsync("output/importtests.pdf");
 
         }
     }

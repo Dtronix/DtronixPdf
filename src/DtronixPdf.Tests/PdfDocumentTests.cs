@@ -23,16 +23,16 @@ namespace DtronixPdf.Tests
         [Test]
         public async Task LoadsDocument()
         {
-            await using var document = await PdfDocument.Load("TestPdf.pdf", null);
+            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
             Assert.AreEqual(1, document.Pages);
         }
 
         [Test]
         public async Task SavesDocument()
         {
-            await using var document = await PdfDocument.Load("TestPdf.pdf", null);
+            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
             await using var sw = new MemoryStream();
-            await document.Save(sw);
+            await document.SaveAsync(sw);
 
             Assert.Greater(sw.Length, 10000);
         }

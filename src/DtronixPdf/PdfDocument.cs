@@ -22,21 +22,22 @@ namespace DtronixPdf
             _documentInstance = documentInstance;
         }
 
-        public static Task<PdfDocument> Load(
+        public static async Task<PdfDocument> LoadAsync(
             string path,
             string password,
             CancellationToken cancellationToken = default)
         {
-            return Load(path, password, PDFiumCoreManager.Default, cancellationToken);
+            return await LoadAsync(path, password, PDFiumCoreManager.Default, cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        public static async Task<PdfDocument> Load(
+        public static async Task<PdfDocument> LoadAsync(
             string path,
             string password,
             PDFiumCoreManager manager,
             CancellationToken cancellationToken = default)
         {
-            await PDFiumCoreManager.Initialize();
+            await PDFiumCoreManager.Initialize().ConfigureAwait(false);
 
             int pages = -1;
             var result = await manager.Dispatcher.QueueResult(_ =>
@@ -44,7 +45,7 @@ namespace DtronixPdf
                     var document = fpdfview.FPDF_LoadDocument(path, password);
                     pages = fpdfview.FPDF_GetPageCount(document);
                     return document;
-                }, cancellationToken: cancellationToken);
+                }, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (result == null)
                 return null;
@@ -59,14 +60,15 @@ namespace DtronixPdf
             return pdfDocument;
         }
 
-        public static Task<PdfDocument> Create()
+        public static async Task<PdfDocument> CreateAsync()
         {
-            return Create(PDFiumCoreManager.Default);
+            return await CreateAsync(PDFiumCoreManager.Default).ConfigureAwait(false);
         }
 
-        public static async Task<PdfDocument> Create(PDFiumCoreManager manager)
+        public static async Task<PdfDocument> CreateAsync(PDFiumCoreManager manager)
         {
-            var result = await manager.Dispatcher.QueueResult(_ => fpdf_edit.FPDF_CreateNewDocument());
+            var result = await manager.Dispatcher.QueueResult(_ => fpdf_edit.FPDF_CreateNewDocument())
+                .ConfigureAwait(false);
 
             if (result == null)
                 return null;
@@ -74,9 +76,10 @@ namespace DtronixPdf
             return new PdfDocument(manager, result);
         }
 
-        public Task<PdfPage> GetPage(int pageIndex)
+        public async Task<PdfPage> GetPageAsync(int pageIndex)
         {
-            return PdfPage.Create(_manager.Dispatcher, _documentInstance, pageIndex);
+            return await PdfPage.CreateAsync(_manager.Dispatcher, _documentInstance, pageIndex)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -88,13 +91,13 @@ namespace DtronixPdf
         /// If null, all pages are imported.</param>
         /// <param name="insertIndex">Insertion index is 0 based.</param>
         /// <returns>True on success, false on failure.</returns>
-        public Task<bool> ImportPages(PdfDocument document, string pageRange, int insertIndex)
+        public async Task<bool> ImportPagesAsync(PdfDocument document, string pageRange, int insertIndex)
         {
-            return _manager.Dispatcher.QueueResult(_ =>
+            return await _manager.Dispatcher.QueueResult(_ =>
             {
                 var result = fpdf_ppo.FPDF_ImportPages(_documentInstance, document._documentInstance, pageRange, insertIndex);
                 return result == 1;
-            });
+            }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -102,10 +105,10 @@ namespace DtronixPdf
         /// </summary>
         /// <param name="pageRange">Pages are 1 based. Pages are separated by commas. Such as "1,3,5-7".</param>
         /// <returns>New document with the specified pages.</returns>
-        public async Task<PdfDocument> ExtractPages(string pageRange)
+        public async Task<PdfDocument> ExtractPagesAsync(string pageRange)
         {
-            var newDocument = await Create();
-            await newDocument.ImportPages(this, pageRange, 0);
+            var newDocument = await CreateAsync().ConfigureAwait(false);
+            await newDocument.ImportPagesAsync(this, pageRange, 0).ConfigureAwait(false);
 
             return newDocument;
         }
@@ -115,9 +118,11 @@ namespace DtronixPdf
         /// </summary>
         /// <param name="pageIndex">0 based index.</param>
         /// <returns>True on success, false on failure.</returns>
-        public Task DeletePage(int pageIndex)
+        public async Task DeletePageAsync(int pageIndex)
         {
-            return _manager.Dispatcher.Queue(() => fpdf_edit.FPDFPageDelete(_documentInstance, pageIndex));
+            await _manager.Dispatcher
+                .Queue(() => fpdf_edit.FPDFPageDelete(_documentInstance, pageIndex))
+                .ConfigureAwait(true);
             
         }
 
@@ -126,11 +131,11 @@ namespace DtronixPdf
         /// </summary>
         /// <param name="path">Path to save the PdfDocument.</param>
         /// <returns>True on success, false on failure.</returns>
-        public async Task<bool> Save(string path)
+        public async Task<bool> SaveAsync(string path)
         {
             await using var fs = new FileStream(path, FileMode.Create);
 
-            return await Save(fs);
+            return await SaveAsync(fs).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -138,7 +143,7 @@ namespace DtronixPdf
         /// </summary>
         /// <param name="stream">Destination stream to write the PdfDocument.</param>
         /// <returns>True on success, false on failure.</returns>
-        public async Task<bool> Save(Stream stream)
+        public async Task<bool> SaveAsync(Stream stream)
         {
             var writer = new PdfFileWriteCopyStream(stream);
             /*
@@ -149,7 +154,7 @@ namespace DtronixPdf
              */
 
             var result = await _manager.Dispatcher.QueueResult(_ =>
-                fpdf_save.FPDF_SaveAsCopy(_documentInstance, writer, 1));
+                fpdf_save.FPDF_SaveAsCopy(_documentInstance, writer, 1)).ConfigureAwait(false);
 
             return result == 1;
         }
@@ -159,7 +164,7 @@ namespace DtronixPdf
             await _manager.Dispatcher.Queue(() =>
             {
                 fpdfview.FPDF_CloseDocument(_documentInstance);
-            });
+            }).ConfigureAwait(false);
 
             _manager.RemoveDocument(this);
         }

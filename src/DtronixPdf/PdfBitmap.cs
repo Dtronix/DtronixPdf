@@ -7,7 +7,7 @@ using PDFiumCore;
 
 namespace DtronixPdf
 {
-    public class PdfBitmap : IAsyncDisposable
+    public class PdfBitmap : IAsyncDisposable, IDisposable
     {
         private readonly FpdfBitmapT _pdfBitmap;
 
@@ -18,6 +18,12 @@ namespace DtronixPdf
         public Boundary Viewport { get; }
 
         public IntPtr Pointer { get; }
+
+        public int Stride { get; }
+
+        public int Width { get; }
+
+        public int Height { get; }
 
         public bool IsDisposed { get; private set; }
 
@@ -36,12 +42,14 @@ namespace DtronixPdf
             Boundary viewport)
         {
             _pdfBitmap = pdfBitmap;
+            Stride = fpdfview.FPDFBitmapGetStride(_pdfBitmap);
+            Width = (int)viewport.Width;
+            Height = (int)viewport.Height;
             Pointer = fpdfview.FPDFBitmapGetBuffer(_pdfBitmap);
             _dispatcher = dispatcher;
             Scale = scale;
             Viewport = viewport;
         }
-
 
 
 
@@ -56,6 +64,17 @@ namespace DtronixPdf
             {
                 fpdfview.FPDFBitmapDestroy(_pdfBitmap);
             })).ConfigureAwait(false);
+        }
+
+
+        public void Dispose()
+        {
+            if (IsDisposed)
+                return;
+
+            IsDisposed = true;
+
+            fpdfview.FPDFBitmapDestroy(_pdfBitmap);
         }
     }
 }

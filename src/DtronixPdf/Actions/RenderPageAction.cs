@@ -8,17 +8,31 @@ using PDFiumCore;
 
 namespace DtronixPdf.Actions
 {
-    internal class RenderPageAction : MessagePumpActionResult<PdfBitmap>
+    public class RenderPageAction : MessagePumpActionResult<PdfBitmap>
     {
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
         private readonly Boundary _viewport;
-        private readonly RenderFlags _flags;
+        private readonly RenderFlags _flags = RenderFlags.RenderAnnotations;
         private readonly uint? _backgroundColor = UInt32.MaxValue;
         private readonly ThreadDispatcher _dispatcher;
         private FpdfBitmapT _bitmap;
+        private float _offsetX;
+        private float _offsetY;
 
-        public RenderPageAction(ThreadDispatcher dispatcher,
+        public float OffsetX
+        {
+            get => _offsetX;
+            set => _offsetX = value;
+        }
+
+        public float OffsetY
+        {
+            get => _offsetY;
+            set => _offsetY = value;
+        }
+
+        internal RenderPageAction(ThreadDispatcher dispatcher,
             FpdfPageT pageInstance,
             float scale,
             Boundary viewport,
@@ -33,6 +47,19 @@ namespace DtronixPdf.Actions
             _flags = flags;
             _backgroundColor = backgroundColor ?? UInt32.MaxValue;
             _dispatcher = dispatcher;
+        }
+
+        public RenderPageAction(
+            PdfPage page,
+            float scale,
+            Boundary viewport,
+            CancellationToken cancellationToken)
+            : base(cancellationToken)
+        {
+            _pageInstance = page.PageInstance;
+            _dispatcher = page.Dispatcher;
+            _scale = scale;
+            _viewport = viewport;
         }
 
         protected override unsafe PdfBitmap OnExecute(CancellationToken cancellationToken)
@@ -82,8 +109,8 @@ namespace DtronixPdf.Actions
                     B = 0,
                     C = 0,
                     D = _scale,
-                    E = -_viewport.MinX,
-                    F = -_viewport.MinY
+                    E = _offsetX,
+                    F = _offsetY
                 };
 
                 fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)_flags);

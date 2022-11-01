@@ -16,10 +16,14 @@ namespace DtronixPdf
         private readonly FpdfPageT _pageInstance;
         private bool _isDisposed = false;
 
+        public ThreadDispatcher Dispatcher => _dispatcher;
+
         public float Width { get; private set; }
         public float Height { get; private set; }
 
         public int InitialIndex { get; private set; }
+
+        internal FpdfPageT PageInstance => _pageInstance;
 
         private PdfPage(ThreadDispatcher dispatcher, FpdfDocumentT documentInstance, FpdfPageT pageInstance)
         {
@@ -72,7 +76,7 @@ namespace DtronixPdf
             return await _dispatcher.QueueResult(
                 new RenderPageAction(
                     _dispatcher,
-                    _pageInstance,
+                    PageInstance,
                     scale,
                     new Boundary(0,0, Width, Height),
                     flags,
@@ -96,12 +100,20 @@ namespace DtronixPdf
             return await _dispatcher.QueueResult(
                 new RenderPageAction(
                     _dispatcher,
-                    _pageInstance,
+                    PageInstance,
                     scale,
                     viewport,
                     flags,
                     argbBackground,
                     cancellationToken)).ConfigureAwait(false);
+        }
+
+        public async Task<PdfBitmap> RenderAsync(RenderPageAction action)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(PdfPage));
+            
+            return await _dispatcher.QueueResult(action).ConfigureAwait(false);
         }
 
         public async ValueTask DisposeAsync()
@@ -113,7 +125,7 @@ namespace DtronixPdf
 
             await _dispatcher.Queue(new SimpleMessagePumpAction(() =>
             {
-                fpdfview.FPDF_ClosePage(_pageInstance);
+                fpdfview.FPDF_ClosePage(PageInstance);
             })).ConfigureAwait(false);
         }
     }

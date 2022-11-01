@@ -19,7 +19,7 @@ namespace DtronixPdf
         /// <returns></returns>
         public Task SetRotation(int rotation)
         {
-            return _dispatcher.Queue(() => fpdf_edit.FPDFPageSetRotation(_pageInstance, rotation));
+            return _dispatcher.Queue(() => fpdf_edit.FPDFPageSetRotation(PageInstance, rotation));
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace DtronixPdf
         /// </returns>
         public Task<int> GetRotation()
         {
-            return _dispatcher.QueueResult(_ => fpdf_edit.FPDFPageGetRotation(_pageInstance));
+            return _dispatcher.QueueResult(_ => fpdf_edit.FPDFPageGetRotation(PageInstance));
         }
 
         /// <summary>

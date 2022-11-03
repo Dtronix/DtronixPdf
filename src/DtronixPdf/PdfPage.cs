@@ -9,7 +9,7 @@ using PDFiumCore;
 
 namespace DtronixPdf
 {
-    public partial class PdfPage : IAsyncDisposable
+    public partial class PdfPage : IAsyncDisposable, IDisposable
     {
         private readonly ThreadDispatcher _dispatcher;
         private readonly FpdfDocumentT _documentInstance;
@@ -127,6 +127,16 @@ namespace DtronixPdf
             {
                 fpdfview.FPDF_ClosePage(PageInstance);
             })).ConfigureAwait(false);
+        }
+
+        public void Dispose()
+        {
+            if (_isDisposed)
+                return;
+
+            _isDisposed = true;
+
+            fpdfview.FPDF_ClosePage(PageInstance);
         }
     }
 }

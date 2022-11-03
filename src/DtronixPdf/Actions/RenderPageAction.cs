@@ -13,7 +13,7 @@ namespace DtronixPdf.Actions
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
         private readonly Boundary _viewport;
-        private readonly RenderFlags _flags = RenderFlags.RenderAnnotations;
+        private RenderFlags _flags = RenderFlags.RenderAnnotations;
         private readonly uint? _backgroundColor = UInt32.MaxValue;
         private readonly ThreadDispatcher _dispatcher;
         private FpdfBitmapT _bitmap;
@@ -30,6 +30,12 @@ namespace DtronixPdf.Actions
         {
             get => _offsetY;
             set => _offsetY = value;
+        }
+
+        public RenderFlags Flags
+        {
+            get => _flags;
+            set => _flags = value;
         }
 
         internal RenderPageAction(ThreadDispatcher dispatcher,
@@ -113,7 +119,7 @@ namespace DtronixPdf.Actions
                     F = _offsetY
                 };
 
-                fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)_flags);
+                fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)Flags);
 
                 cancellationToken.ThrowIfCancellationRequested();
 

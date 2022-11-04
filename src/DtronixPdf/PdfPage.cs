@@ -10,7 +10,7 @@ using static System.Collections.Specialized.BitVector32;
 
 namespace DtronixPdf
 {
-    public partial class PdfPage : IAsyncDisposable, IDisposable
+    public partial class PdfPage : IDisposable
     {
         internal readonly PdfDocument Document;
         private readonly FpdfPageT _pageInstance;
@@ -198,18 +198,6 @@ namespace DtronixPdf
 
             return Document.Dispatcher.SyncExec(() => action.ExecuteSync(CancellationToken.None));
 
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            if (_isDisposed)
-                return;
-
-            _isDisposed = true;
-
-            await Document.Dispatcher
-                .Queue(new SimpleMessagePumpAction(() => fpdfview.FPDF_ClosePage(PageInstance)))
-                .ConfigureAwait(false);
         }
 
         public void Dispose()

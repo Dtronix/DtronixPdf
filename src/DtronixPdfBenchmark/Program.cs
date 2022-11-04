@@ -36,7 +36,7 @@ namespace DtronixPdfBenchmark
 
             for (int i = 1; i < iterations; i++)
             {
-                await using var page = await document.GetPageAsync(0);
+                using var page = await document.GetPageAsync(0);
                 
                 float scale = i * 0.25f;
                 Point center = new Point(0, 0);
@@ -59,7 +59,7 @@ namespace DtronixPdfBenchmark
             }
 
             sw.Stop();
-            await document.DisposeAsync();
+            document.Dispose();
 
             Console.WriteLine($"Rendering {TestPdf} Complete");
         }
@@ -72,8 +72,8 @@ namespace DtronixPdfBenchmark
 
             for (int i = 1; i < iterations; i++)
             {
-                await using var document = await PdfDocument.LoadAsync(TestPdf, null);
-                await using var page = await document.GetPageAsync(0);
+                using var document = await PdfDocument.LoadAsync(TestPdf, null);
+                using var page = await document.GetPageAsync(0);
 
                 Console.WriteLine($"{sw.ElapsedMilliseconds:##,###} Milliseconds");
                 sw.Restart();

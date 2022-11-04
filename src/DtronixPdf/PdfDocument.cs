@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using PDFiumCore;
@@ -7,7 +8,7 @@ using PDFiumCore;
 
 namespace DtronixPdf
 {
-    public class PdfDocument : IAsyncDisposable, IDisposable
+    public class PdfDocument : IDisposable
     {
         internal readonly FpdfDocumentT Instance;
 
@@ -15,6 +16,7 @@ namespace DtronixPdf
         internal readonly PdfThreadDispatcher Dispatcher;
 
         private bool _isDisposed = false;
+        private static IntPtr? _documentPointer;
 
         public int Pages { get; private set; }
 
@@ -103,6 +105,56 @@ namespace DtronixPdf
             {
                 manager.Dispatcher.Semaphore.Release();
             }
+        }
+
+        public static PdfDocument Load(
+            Stream stream,
+            string password,
+            CancellationToken cancellationToken = default)
+        {
+            return Load(stream, password, PdfiumCoreManager.Default, cancellationToken);
+        }
+
+
+        public static unsafe PdfDocument Load(
+            Stream stream,
+            string password,
+            PdfiumCoreManager manager,
+            CancellationToken cancellationToken = default)
+        {
+            var length = (int)stream.Length;
+
+            var ptr = NativeMemory.Alloc((nuint)length);
+
+            Span<byte> ptrSpan = new Span<byte>(ptr, length);
+            _documentPointer = new IntPtr(ptr);
+            var readLength = 0;
+
+            // Copy the data to the memory.
+            while ((readLength = stream.Read(ptrSpan)) > 0)
+                ptrSpan = ptrSpan.Slice(readLength);
+
+            PdfiumCoreManager.Initialize();
+
+            int pages = -1;
+            var result = manager.Dispatcher.SyncExec(() =>
+            {
+                var document = fpdfview.FPDF_LoadMemDocument(_documentPointer.Value, length, password);
+                pages = fpdfview.FPDF_GetPageCount(document);
+                return document;
+            });
+
+            if (result == null)
+                return null;
+
+            var pdfDocument = new PdfDocument(manager, result)
+            {
+                Pages = pages,
+            };
+
+            manager.AddDocument(pdfDocument);
+
+            return pdfDocument;
         }
 
         public static async Task<PdfDocument> CreateAsync()
@@ -296,26 +348,18 @@ namespace DtronixPdf
             return result == 1;
         }
 
-        public async ValueTask DisposeAsync()
+        public unsafe void Dispose()
         {
             if (_isDisposed)
                 return;
 
             _isDisposed = true;
-
-            await Dispatcher.Queue(() => fpdfview.FPDF_CloseDocument(Instance)).ConfigureAwait(false);
-
-            Manager.RemoveDocument(this);
-        }
-
-        public void Dispose()
-        {
-            if (_isDisposed)
-                return;
-
-            _isDisposed = true;
-
+            
             Dispatcher.SyncExec(() => fpdfview.FPDF_CloseDocument(Instance));
+
+            // Free the native memory.
+            if (_documentPointer != null)
+                NativeMemory.Free(_documentPointer.Value.ToPointer());
         }
     }
 }

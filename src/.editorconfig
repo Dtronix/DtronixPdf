@@ -1,4 +1,4 @@
-# To learn more about .editorconfig see https://aka.ms/editorconfigdocs
+﻿# To learn more about .editorconfig see https://aka.ms/editorconfigdocs
 ###############################
 # Core EditorConfig Options   #
 ###############################
@@ -66,6 +66,16 @@ dotnet_naming_rule.constant_fields_should_be_pascal_case.style    = pascal_case_
 dotnet_naming_symbols.constant_fields.applicable_kinds            = field
 dotnet_naming_symbols.constant_fields.applicable_accessibilities  = *
 dotnet_naming_symbols.constant_fields.required_modifiers          = const
+# Private Fields
+dotnet_naming_rule.private_members_with_underscore.symbols  = private_fields
+dotnet_naming_rule.private_members_with_underscore.style    = prefix_underscore
+dotnet_naming_rule.private_members_with_underscore.severity = suggestion
+dotnet_naming_symbols.private_fields.applicable_kinds           = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.required_modifiers         = readonly
+
+dotnet_naming_style.prefix_underscore.capitalization = camel_case
+dotnet_naming_style.prefix_underscore.required_prefix = _
 ###############################
 # C# Coding Conventions       #
 ###############################
@@ -125,9 +135,3 @@ csharp_space_between_method_call_empty_parameter_list_parentheses = false
 # Wrapping preferences
 csharp_preserve_single_line_statements = true
 csharp_preserve_single_line_blocks = true
-###############################
-# VB Coding Conventions       #
-###############################
-[*.vb]
-# Modifier preferences
-visual_basic_preferred_modifier_order = Partial,Default,Private,Protected,Public,Friend,NotOverridable,Overridable,MustOverride,Overloads,Overrides,MustInherit,NotInheritable,Static,Shared,Shadows,ReadOnly,WriteOnly,Dim,Const,WithEvents,Widening,Narrowing,Custom,Async:suggestion

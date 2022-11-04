@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using SixLabors.ImageSharp;
@@ -49,7 +49,7 @@ namespace DtronixPdf.Tests
         {
             await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
             await using var page = await document.GetPageAsync(0);
-            Assert.AreEqual(3, await page.GetRotation());
+            Assert.AreEqual(3, await page.GetRotationAsync());
         }
 
         [Test]
@@ -57,8 +57,8 @@ namespace DtronixPdf.Tests
         {
             await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
             await using var page = await document.GetPageAsync(0);
-            await page.SetRotation(1);
-            Assert.AreEqual(1, await page.GetRotation());
+            await page.SetRotationAsync(1);
+            Assert.AreEqual(1, await page.GetRotationAsync());
         }
     }
 }

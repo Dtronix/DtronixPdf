@@ -15,7 +15,7 @@ namespace DtronixPdf.Actions
         private readonly Boundary _viewport;
         private RenderFlags _flags = RenderFlags.RenderAnnotations;
         private readonly uint? _backgroundColor = UInt32.MaxValue;
-        private readonly ThreadDispatcher _dispatcher;
+        private readonly PdfThreadDispatcher _dispatcher;
         private FpdfBitmapT _bitmap;
         private float _offsetX;
         private float _offsetY;
@@ -38,7 +38,7 @@ namespace DtronixPdf.Actions
             set => _flags = value;
         }
 
-        internal RenderPageAction(ThreadDispatcher dispatcher,
+        internal RenderPageAction(PdfThreadDispatcher dispatcher,
             FpdfPageT pageInstance,
             float scale,
             Boundary viewport,
@@ -63,12 +63,17 @@ namespace DtronixPdf.Actions
             : base(cancellationToken)
         {
             _pageInstance = page.PageInstance;
-            _dispatcher = page.Dispatcher;
+            _dispatcher = page.Document.Dispatcher;
             _scale = scale;
             _viewport = viewport;
         }
 
         protected override unsafe PdfBitmap OnExecute(CancellationToken cancellationToken)
+        {
+            return ExecuteSync(cancellationToken);
+        }
+
+        public PdfBitmap ExecuteSync(CancellationToken cancellationToken)
         {
             try
             {
@@ -89,8 +94,8 @@ namespace DtronixPdf.Actions
                 {
                     fpdfview.FPDFBitmapFillRect(
                         _bitmap,
-                        0, 
-                        0, 
+                        0,
+                        0,
                         (int)_viewport.Width,
                         (int)_viewport.Height,
                         _backgroundColor.Value);
@@ -100,10 +105,7 @@ namespace DtronixPdf.Actions
 
                 using var clipping = new FS_RECTF_
                 {
-                    Left = 0,
-                    Right = _viewport.Width,
-                    Bottom = 0,
-                    Top = _viewport.Height
+                    Left = 0, Right = _viewport.Width, Bottom = 0, Top = _viewport.Height
                 };
 
                 // |          | a b 0 |
@@ -127,7 +129,7 @@ namespace DtronixPdf.Actions
             }
             catch (OperationCanceledException)
             {
-                if(_bitmap != null)
+                if (_bitmap != null)
                     fpdfview.FPDFBitmapDestroy(_bitmap);
                 throw;
             }
@@ -137,6 +139,10 @@ namespace DtronixPdf.Actions
                     fpdfview.FPDFBitmapDestroy(_bitmap);
 
                 throw new Exception("Error rendering page. Check inner exception.", ex);
+            }
+            finally
+            {
+
             }
         }
     }

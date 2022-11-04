@@ -15,7 +15,7 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="DtronixCommon" Version="0.6.4" />
+		<PackageReference Include="DtronixCommon" Version="0.6.5" />
 		<PackageReference Include="PDFiumCore" Version="109.0.5378" />
 	</ItemGroup>
 </Project>

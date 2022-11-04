@@ -11,7 +11,7 @@ namespace DtronixPdf
     {
         private readonly FpdfBitmapT _pdfBitmap;
 
-        private readonly ThreadDispatcher _dispatcher;
+        private readonly PdfThreadDispatcher _dispatcher;
 
         public float Scale { get; }
 
@@ -37,7 +37,7 @@ namespace DtronixPdf
         /// <param name="viewport"></param>
         internal PdfBitmap(
             FpdfBitmapT pdfBitmap,
-            ThreadDispatcher dispatcher,
+            PdfThreadDispatcher dispatcher,
             float scale, 
             Boundary viewport)
         {

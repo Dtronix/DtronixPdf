@@ -15,7 +15,7 @@ namespace DtronixPdf.Actions
         private readonly Boundary _viewport;
         private RenderFlags _flags = RenderFlags.RenderAnnotations;
         private readonly uint? _backgroundColor = UInt32.MaxValue;
-        private readonly PdfThreadDispatcher _dispatcher;
+        private readonly PdfActionSynchronizer _synchronizer;
         private FpdfBitmapT _bitmap;
         private float _offsetX;
         private float _offsetY;
@@ -38,7 +38,7 @@ namespace DtronixPdf.Actions
             set => _flags = value;
         }
 
-        internal RenderPageAction(PdfThreadDispatcher dispatcher,
+        internal RenderPageAction(PdfActionSynchronizer synchronizer,
             FpdfPageT pageInstance,
             float scale,
             Boundary viewport,
@@ -52,7 +52,7 @@ namespace DtronixPdf.Actions
             _viewport = viewport;
             _flags = flags;
             _backgroundColor = backgroundColor ?? UInt32.MaxValue;
-            _dispatcher = dispatcher;
+            _synchronizer = synchronizer;
         }
 
         public RenderPageAction(
@@ -63,7 +63,7 @@ namespace DtronixPdf.Actions
             : base(cancellationToken)
         {
             _pageInstance = page.PageInstance;
-            _dispatcher = page.Document.Dispatcher;
+            _synchronizer = page.Document.Synchronizer;
             _scale = scale;
             _viewport = viewport;
         }
@@ -125,7 +125,7 @@ namespace DtronixPdf.Actions
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                return new PdfBitmap(_bitmap, _dispatcher, _scale, _viewport);
+                return new PdfBitmap(_bitmap, _synchronizer, _scale, _viewport);
             }
             catch (OperationCanceledException)
             {

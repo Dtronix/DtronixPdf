@@ -8,24 +8,9 @@ using DtronixCommon.Threading.Dispatcher;
 
 namespace DtronixPdf
 {
-    public class PdfThreadDispatcher : ThreadDispatcher
+    public class PdfActionSynchronizer
     {
-        public readonly SemaphoreSlim Semaphore;
-
-        public PdfThreadDispatcher(int threadCount) : this(new ThreadDispatcherConfiguration()
-        {
-            ThreadCount = threadCount
-        })
-        {
-
-        }
-
-        public PdfThreadDispatcher(ThreadDispatcherConfiguration configs) 
-            : base(configs)
-        {
-            Semaphore = new SemaphoreSlim(configs.ThreadCount);
-            this.DispatcherExecutionWrapper = SyncExec;
-        }
+        public readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
 
         public void SyncExec(Action action)
         {
@@ -33,10 +18,12 @@ namespace DtronixPdf
             {
                 Semaphore.Wait();
                 action();
+                Semaphore.Release();
             }
-            finally
+            catch
             {
                 Semaphore.Release();
+                throw;
             }
         }
 
@@ -45,11 +32,14 @@ namespace DtronixPdf
             try
             {
                 Semaphore.Wait();
-                return function();
+                var result = function();
+                Semaphore.Release();
+                return result;
             }
-            finally
+            catch
             {
                 Semaphore.Release();
+                throw;
             }
         }
     }

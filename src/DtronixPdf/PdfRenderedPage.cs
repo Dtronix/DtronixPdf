@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace DtronixPdf
 {
-    public class PdfRenderedPage : IAsyncDisposable
+    public class PdfRenderedPage : IDisposable
     {
         public PdfBitmap PdfBitmap { get; }
         //public BitmapSource BitmapSource { get; }
@@ -24,9 +24,9 @@ namespace DtronixPdf
                 pdfBitmap.Stride);*/
         }
 
-        public async ValueTask DisposeAsync()
+        public void Dispose()
         {
-            await PdfBitmap.DisposeAsync().ConfigureAwait(false);
+            PdfBitmap?.Dispose();
         }
     }
 }

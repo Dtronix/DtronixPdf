@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using SixLabors.ImageSharp;
@@ -22,43 +22,43 @@ namespace DtronixPdf.Tests
 
 
         [Test]
-        public async Task LoadsPage()
+        public void LoadsPage()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
         }
 
         [Test]
-        public async Task PageSizeIsReturned()
+        public void PageSizeIsReturned()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
             Assert.AreEqual(new SizeF(792, 612), new SizeF(page.Width, page.Height));
         }
 
         [Test]
-        public async Task InitalIndexIsReturned()
+        public void InitalIndexIsReturned()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
             Assert.AreEqual(0, page.InitialIndex);
         }
 
         [Test]
-        public async Task GetRotationReturnsCorrectValue()
+        public void GetRotationReturnsCorrectValue()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
-            Assert.AreEqual(3, await page.GetRotation());
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
+            Assert.AreEqual(3, page.GetRotation());
         }
 
         [Test]
-        public async Task SetRotationSetsValue()
+        public void SetRotationSetsValue()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
-            await page.SetRotation(1);
-            Assert.AreEqual(1, await page.GetRotation());
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
+            page.SetRotation(1);
+            Assert.AreEqual(1, page.GetRotation());
         }
     }
 }

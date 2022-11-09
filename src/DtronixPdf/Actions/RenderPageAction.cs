@@ -8,17 +8,37 @@ using PDFiumCore;
 
 namespace DtronixPdf.Actions
 {
-    internal class RenderPageAction : MessagePumpActionResult<PdfBitmap>
+    public class RenderPageAction : MessagePumpActionResult<PdfBitmap>
     {
         public readonly FpdfPageT _pageInstance;
         private readonly float _scale;
         private readonly Boundary _viewport;
-        private readonly RenderFlags _flags;
+        private RenderFlags _flags = RenderFlags.RenderAnnotations;
         private readonly uint? _backgroundColor = UInt32.MaxValue;
-        private readonly ThreadDispatcher _dispatcher;
+        private readonly PdfActionSynchronizer _synchronizer;
         private FpdfBitmapT _bitmap;
+        private float _offsetX;
+        private float _offsetY;
 
-        public RenderPageAction(ThreadDispatcher dispatcher,
+        public float OffsetX
+        {
+            get => _offsetX;
+            set => _offsetX = value;
+        }
+
+        public float OffsetY
+        {
+            get => _offsetY;
+            set => _offsetY = value;
+        }
+
+        public RenderFlags Flags
+        {
+            get => _flags;
+            set => _flags = value;
+        }
+
+        internal RenderPageAction(PdfActionSynchronizer synchronizer,
             FpdfPageT pageInstance,
             float scale,
             Boundary viewport,
@@ -32,10 +52,28 @@ namespace DtronixPdf.Actions
             _viewport = viewport;
             _flags = flags;
             _backgroundColor = backgroundColor ?? UInt32.MaxValue;
-            _dispatcher = dispatcher;
+            _synchronizer = synchronizer;
+        }
+
+        public RenderPageAction(
+            PdfPage page,
+            float scale,
+            Boundary viewport,
+            CancellationToken cancellationToken)
+            : base(cancellationToken)
+        {
+            _pageInstance = page.PageInstance;
+            _synchronizer = page.Document.Synchronizer;
+            _scale = scale;
+            _viewport = viewport;
         }
 
         protected override unsafe PdfBitmap OnExecute(CancellationToken cancellationToken)
+        {
+            return ExecuteSync(cancellationToken);
+        }
+
+        public PdfBitmap ExecuteSync(CancellationToken cancellationToken)
         {
             try
             {
@@ -56,8 +94,8 @@ namespace DtronixPdf.Actions
                 {
                     fpdfview.FPDFBitmapFillRect(
                         _bitmap,
-                        0, 
-                        0, 
+                        0,
+                        0,
                         (int)_viewport.Width,
                         (int)_viewport.Height,
                         _backgroundColor.Value);
@@ -67,10 +105,7 @@ namespace DtronixPdf.Actions
 
                 using var clipping = new FS_RECTF_
                 {
-                    Left = 0,
-                    Right = _viewport.Width,
-                    Bottom = 0,
-                    Top = _viewport.Height
+                    Left = 0, Right = _viewport.Width, Bottom = 0, Top = _viewport.Height
                 };
 
                 // |          | a b 0 |
@@ -82,19 +117,19 @@ namespace DtronixPdf.Actions
                     B = 0,
                     C = 0,
                     D = _scale,
-                    E = -_viewport.MinX,
-                    F = -_viewport.MinY
+                    E = _offsetX,
+                    F = _offsetY
                 };
 
-                fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)_flags);
+                fpdfview.FPDF_RenderPageBitmapWithMatrix(_bitmap, _pageInstance, matrix, clipping, (int)Flags);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                return new PdfBitmap(_bitmap, _dispatcher, _scale, _viewport);
+                return new PdfBitmap(_bitmap, _synchronizer, _scale, _viewport);
             }
             catch (OperationCanceledException)
             {
-                if(_bitmap != null)
+                if (_bitmap != null)
                     fpdfview.FPDFBitmapDestroy(_bitmap);
                 throw;
             }
@@ -104,6 +139,10 @@ namespace DtronixPdf.Actions
                     fpdfview.FPDFBitmapDestroy(_bitmap);
 
                 throw new Exception("Error rendering page. Check inner exception.", ex);
+            }
+            finally
+            {
+
             }
         }
     }

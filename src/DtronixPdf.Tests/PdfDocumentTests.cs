@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -6,33 +6,28 @@ namespace DtronixPdf.Tests
 {
     public class PdfDocumentTests
     {
-
-        [SetUp]
-        public void Setup()
-        {
-            //PDFiumCoreManager.Initialize();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            //PDFiumCoreManager.Destroy();
-        }
-
-
         [Test]
-        public async Task LoadsDocument()
+        [Repeat(500)]
+        public void LoadsDocument()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
             Assert.AreEqual(1, document.Pages);
         }
 
         [Test]
-        public async Task SavesDocument()
+        public void LoadsMemoryDocument()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var sw = new MemoryStream();
-            await document.SaveAsync(sw);
+            using var stream = File.OpenRead("TestPdf.pdf");
+            using var document = PdfDocument.Load(stream, null);
+            Assert.AreEqual(1, document.Pages);
+        }
+
+        [Test]
+        public void SavesDocument()
+        {
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var sw = new MemoryStream();
+            document.Save(sw);
 
             Assert.Greater(sw.Length, 10000);
         }

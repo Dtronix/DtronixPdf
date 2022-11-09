@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Mono.TextTemplating;
 using PDFiumCore;
 
 namespace DtronixPdf
 {
-    public partial class PdfPage : IAsyncDisposable
+    public partial class PdfPage
     {
         
         /// <summary>
@@ -17,9 +18,9 @@ namespace DtronixPdf
         /// <para>3 - Rotated 270 degrees clockwise.</para>
         /// </param>
         /// <returns></returns>
-        public Task SetRotation(int rotation)
+        public void SetRotation(int rotation)
         {
-            return _dispatcher.Queue(() => fpdf_edit.FPDFPageSetRotation(_pageInstance, rotation));
+            Document.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageSetRotation(PageInstance, rotation));
         }
 
         /// <summary>
@@ -31,9 +32,9 @@ namespace DtronixPdf
         /// <para>2 - Rotated 180 degrees clockwise.</para>
         /// <para>3 - Rotated 270 degrees clockwise.</para>
         /// </returns>
-        public Task<int> GetRotation()
+        public int GetRotation()
         {
-            return _dispatcher.QueueResult(_ => fpdf_edit.FPDFPageGetRotation(_pageInstance));
+            return Document.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageGetRotation(PageInstance));
         }
 
         /// <summary>
@@ -46,9 +47,9 @@ namespace DtronixPdf
         /// <para>3 - Rotated 270 degrees clockwise.</para>
         /// </param>
         /// <returns></returns>
-        public Task Delete()
+        public void Delete()
         {
-            return _dispatcher.Queue(() => fpdf_edit.FPDFPageDelete(_documentInstance, InitialIndex));
+            Document.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageDelete(Document.Instance, InitialIndex));
         }
     }
 }

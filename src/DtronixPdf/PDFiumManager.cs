@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using DtronixCommon.Threading.Dispatcher;
 using PDFiumCore;
@@ -8,45 +9,44 @@ using PDFiumCore;
 namespace DtronixPdf
 {
 
-    public class PDFiumCoreManager
+    public class PdfiumCoreManager
     {
         private static bool IsInitialized;
 
-        private static PDFiumCoreManager _managerDefaultInstance;
-        public static PDFiumCoreManager Default => _managerDefaultInstance ??= new PDFiumCoreManager();
+        private static PdfiumCoreManager _managerDefaultInstance;
+        public static PdfiumCoreManager Default => _managerDefaultInstance ??= new PdfiumCoreManager();
 
-        public readonly ThreadDispatcher Dispatcher;
+        private readonly PdfActionSynchronizer _synchronizer;
 
         private readonly List<PdfDocument> LoadedDocuments = new ();
 
-        private static readonly ConcurrentBag<PDFiumCoreManager> LoadedManagers = new ();
+        private static readonly ConcurrentBag<PdfiumCoreManager> LoadedManagers = new ();
 
-        private PDFiumCoreManager()
+        private PdfiumCoreManager()
         {
             LoadedManagers.Add(this);
 
-            Dispatcher = new ThreadDispatcher(1);
-            Dispatcher.Start();
+            _synchronizer = new PdfActionSynchronizer();
         }
 
         /// <summary>
         /// Initialized the PDFiumCore library.
         /// </summary>
         /// <returns></returns>
-        internal static Task Initialize()
+        internal static void Initialize()
         {
             if (IsInitialized)
-                return Task.CompletedTask;
+                return;
 
             IsInitialized = true;
             // Initialize the library.
-            return Default.Dispatcher.Queue(fpdfview.FPDF_InitLibrary);
+            Default._synchronizer.SyncExec(fpdfview.FPDF_InitLibrary);
         }
 
-        private static Task Unload()
+        public static void Unload()
         {
             if (!IsInitialized)
-                return Task.CompletedTask;
+                return;
 
             foreach (var pdfiumCoreManager in LoadedManagers)
             {
@@ -56,8 +56,7 @@ namespace DtronixPdf
 
             IsInitialized = false;
 
-            // Initialize the library.
-            return Default.Dispatcher.Queue(fpdfview.FPDF_DestroyLibrary);
+            Default._synchronizer.SyncExec(fpdfview.FPDF_DestroyLibrary);
         }
 
         internal void AddDocument(PdfDocument document)

@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using System.IO;
 using System.Net.Mime;
 using System.Threading;
@@ -15,11 +15,11 @@ namespace DtronixPdf.Tests
     public class PdfPageRenderTests
     {
         [Test]
-        public async Task RendererCreatesImageSize()
+        public void RendererCreatesImageSize()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
-            var renderPage = await page.RenderAsync(
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
+            var renderPage = page.Render(
                 1,
                 (uint)Color.White.ToArgb(),
                 new Boundary(0, 0, page.Width, page.Height));
@@ -31,44 +31,42 @@ namespace DtronixPdf.Tests
         }
 
         [Test]
-        public async Task RendererSavesImage()
+        public void RendererSavesImage()
         {
-            await using var document = await PdfDocument.LoadAsync("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
-            var renderPage = await page.RenderAsync(
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
+            var renderPage = page.Render(
                 1,
                 (uint)Color.White.ToArgb(),
                 new Boundary(0, 0, page.Width, page.Height));
 
-            await using var writer = File.OpenWrite("test.png");
-            await renderPage.GetImage().SaveAsync(writer, new PngEncoder());
+            using var writer = File.OpenWrite("test.png");
+            renderPage.GetImage().Save(writer, new PngEncoder());
         }
 
         /*
-        public async Task PixelTest_1()
+        public void PixelTest_1()
         {
-            await using var document = await PdfDocument.Load("TestPdf.pdf", null);
-            await using var page = await document.GetPageAsync(0);
-            await using var expectedImageStream = File.OpenRead("PdfPageRendererTests/pixel_test_1.png");
+            using var document = PdfDocument.Load("TestPdf.pdf", null);
+            using var page = document.GetPage(0);
+            using var expectedImageStream = File.OpenRead("PdfPageRendererTests/pixel_test_1.png");
             using var expectedImage = MediaTypeNames.Image.Load<Bgra32>(expectedImageStream, new PngDecoder());
 
-            var renderPage = await page.Render(
+            var renderPage = page.Render(
                 1,
                 (uint)Color.White.ToArgb(), 
                 new Boundary(522, 477, 3, 3));
 
-            var renderPage2 = await page.Render(
+            var renderPage2 = page.Render(
                 1,
                 (uint)Color.White.ToArgb(), 
                 new Boundary(522, 477, 30, 30));
 
-            await renderPage2.Image.SaveAsPngAsync("png1Crop.png");
+            renderPage2.Image.SaveAsPng("png1Crop.png");
 
-            var renderPage3 = await page.Render(1, Color.White);
+            var renderPage3 = page.Render(1, Color.White);
 
-            await renderPage3.Image.SaveAsPngAsync("png1Full.png");
-
-
+            renderPage3.Image.SaveAsPng("png1Full.png");
 
 
 
@@ -78,7 +76,9 @@ namespace DtronixPdf.Tests
 
 
 
-            var pageBitmap = await page.Render(1, Color.White);
+
+
+            var pageBitmap = page.Render(1, Color.White);
             
             for (int x = 0; x < 3; x++)
             {

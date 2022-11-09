@@ -7,11 +7,11 @@ using PDFiumCore;
 
 namespace DtronixPdf
 {
-    public class PdfBitmap : IAsyncDisposable, IDisposable
+    public class PdfBitmap : IDisposable
     {
         private readonly FpdfBitmapT _pdfBitmap;
 
-        private readonly ThreadDispatcher _dispatcher;
+        private readonly PdfActionSynchronizer _synchronizer;
 
         public float Scale { get; }
 
@@ -28,16 +28,16 @@ namespace DtronixPdf
         public bool IsDisposed { get; private set; }
 
         /// <summary>
-        /// Only call within the dispatcher since dll calls are made.
+        /// Only call within the synchronizer since dll calls are made.
         /// </summary>
         /// <param name="pdfBitmap"></param>
         /// <param name="image"></param>
-        /// <param name="dispatcher"></param>
+        /// <param name="synchronizer"></param>
         /// <param name="scale"></param>
         /// <param name="viewport"></param>
         internal PdfBitmap(
             FpdfBitmapT pdfBitmap,
-            ThreadDispatcher dispatcher,
+            PdfActionSynchronizer synchronizer,
             float scale, 
             Boundary viewport)
         {
@@ -46,26 +46,10 @@ namespace DtronixPdf
             Width = (int)viewport.Width;
             Height = (int)viewport.Height;
             Pointer = fpdfview.FPDFBitmapGetBuffer(_pdfBitmap);
-            _dispatcher = dispatcher;
+            _synchronizer = synchronizer;
             Scale = scale;
             Viewport = viewport;
         }
-
-
-
-        public async ValueTask DisposeAsync()
-        {
-            if (IsDisposed)
-                return;
-
-            IsDisposed = true;
-
-            await _dispatcher.Queue(new SimpleMessagePumpAction(() =>
-            {
-                fpdfview.FPDFBitmapDestroy(_pdfBitmap);
-            })).ConfigureAwait(false);
-        }
-
 
         public void Dispose()
         {
@@ -74,7 +58,7 @@ namespace DtronixPdf
 
             IsDisposed = true;
 
-            fpdfview.FPDFBitmapDestroy(_pdfBitmap);
+            _synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(_pdfBitmap));
         }
     }
 }

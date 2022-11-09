@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using DtronixCommon;
 using DtronixPdf;
@@ -48,11 +49,12 @@ namespace DtronixPdfBenchmark
                     1920,
                     1080);
 
-
-                using var result = page.Render(
-                    scale,
-                    Color.White.ToPixel<Argb32>().Argb,
-                    viewport);
+                using var result = page.Render(new PdfPageRenderConfig()
+                {
+                    Viewport = viewport,
+                    Scale = scale,
+                    BackgroundColor = uint.MaxValue
+                });
                 result.GetImage().SaveAsPng($"output/{TestPdf}-{i}.png");
                 Console.WriteLine($"{sw.ElapsedMilliseconds:##,###} Milliseconds");
                 sw.Restart();

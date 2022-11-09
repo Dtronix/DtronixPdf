@@ -7,20 +7,6 @@ namespace DtronixPdf.Tests
 {
     public class PdfPageTests
     {
-
-        [SetUp]
-        public void Setup()
-        {
-            //PDFiumCoreManager.Initialize();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            //PDFiumCoreManager.Destroy();
-        }
-
-
         [Test]
         public void LoadsPage()
         {

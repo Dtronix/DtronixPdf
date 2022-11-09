@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Mono.TextTemplating;
-using PDFiumCore;
+﻿using PDFiumCore;
 
 namespace DtronixPdf
 {

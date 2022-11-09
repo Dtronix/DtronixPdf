@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
 using DtronixCommon;
-using DtronixCommon.Threading.Dispatcher;
-using DtronixCommon.Threading.Dispatcher.Actions;
 using PDFiumCore;
 
 namespace DtronixPdf
@@ -31,7 +28,6 @@ namespace DtronixPdf
         /// Only call within the synchronizer since dll calls are made.
         /// </summary>
         /// <param name="pdfBitmap"></param>
-        /// <param name="image"></param>
         /// <param name="synchronizer"></param>
         /// <param name="scale"></param>
         /// <param name="viewport"></param>

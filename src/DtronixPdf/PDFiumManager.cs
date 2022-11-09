@@ -1,28 +1,25 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using DtronixCommon.Threading.Dispatcher;
 using PDFiumCore;
 
 namespace DtronixPdf
 {
 
-    public class PdfiumCoreManager
+    public class PdfiumManager
     {
         private static bool IsInitialized;
 
-        private static PdfiumCoreManager _managerDefaultInstance;
-        public static PdfiumCoreManager Default => _managerDefaultInstance ??= new PdfiumCoreManager();
+        private static PdfiumManager _managerDefaultInstance;
+        public static PdfiumManager Default => _managerDefaultInstance ??= new PdfiumManager();
 
         private readonly PdfActionSynchronizer _synchronizer;
 
         private readonly List<PdfDocument> LoadedDocuments = new ();
 
-        private static readonly ConcurrentBag<PdfiumCoreManager> LoadedManagers = new ();
+        private static readonly ConcurrentBag<PdfiumManager> LoadedManagers = new ();
 
-        private PdfiumCoreManager()
+        private PdfiumManager()
         {
             LoadedManagers.Add(this);
 

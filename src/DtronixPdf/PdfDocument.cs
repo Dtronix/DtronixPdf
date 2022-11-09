@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using PDFiumCore;
 
 
@@ -24,15 +21,12 @@ namespace DtronixPdf
         {
             Synchronizer = synchronizer;
             Instance = instance;
-            PdfiumCoreManager.Default.AddDocument(this);
+            PdfiumManager.Default.AddDocument(this);
         }
 
-        public static PdfDocument Load(
-            string path,
-            string password,
-            CancellationToken cancellationToken = default)
+        public static PdfDocument Load(string path, string password)
         {
-            PdfiumCoreManager.Initialize();
+            PdfiumManager.Initialize();
 
             var synchronizer = new PdfActionSynchronizer();
 
@@ -48,10 +42,7 @@ namespace DtronixPdf
 
         }
 
-        public static unsafe PdfDocument Load(
-            Stream stream,
-            string password,
-            CancellationToken cancellationToken = default)
+        public static unsafe PdfDocument Load(Stream stream, string password)
         {
             var synchronizer = new PdfActionSynchronizer();
 
@@ -67,7 +58,7 @@ namespace DtronixPdf
             while ((readLength = stream.Read(ptrSpan)) > 0)
                 ptrSpan = ptrSpan.Slice(readLength);
 
-            PdfiumCoreManager.Initialize();
+            PdfiumManager.Initialize();
 
             int pages = -1;
             var result = synchronizer.SyncExec(() =>
@@ -185,7 +176,7 @@ namespace DtronixPdf
 
             Synchronizer.SyncExec(() => fpdfview.FPDF_CloseDocument(Instance));
 
-            PdfiumCoreManager.Default.RemoveDocument(this);
+            PdfiumManager.Default.RemoveDocument(this);
 
             // Free the native memory.
             if (_documentPointer != null)

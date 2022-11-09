@@ -7,7 +7,6 @@ namespace DtronixPdf.Tests
     public class PdfDocumentTests
     {
         [Test]
-        [Repeat(500)]
         public void LoadsDocument()
         {
             using var document = PdfDocument.Load("TestPdf.pdf", null);

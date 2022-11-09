@@ -1,12 +1,8 @@
 ﻿using System;
+using System.Reflection.Metadata;
 using System.Threading;
-using System.Threading.Tasks;
 using DtronixCommon;
-using DtronixCommon.Threading.Dispatcher;
-using DtronixCommon.Threading.Dispatcher.Actions;
-using DtronixPdf.Actions;
 using PDFiumCore;
-using static System.Collections.Specialized.BitVector32;
 
 namespace DtronixPdf
 {
@@ -59,59 +55,103 @@ namespace DtronixPdf
             return page;
         }
 
-        public PdfBitmap Render(
-            float scale,
-            uint? argbBackground,
-            RenderFlags flags = RenderFlags.RenderAnnotations,
-            CancellationToken cancellationToken = default)
+        public PdfBitmap Render(float scale, CancellationToken cancellationToken = default)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException(nameof(PdfPage));
 
-            var action = new RenderPageAction(
-                Document.Synchronizer,
-                PageInstance,
-                scale,
-                new Boundary(0, 0, Width, Height),
-                flags,
-                argbBackground,
-                cancellationToken);
+            var config = new PdfPageRenderConfig()
+            {
+                Scale = scale,
+                Viewport = new Boundary(0, 0, Width * scale, Height * scale),
+                CancellationToken = cancellationToken,
+            };
 
-            return Document.Synchronizer.SyncExec(() => action.ExecuteSync(default));
+            return Render(config);
         }
 
-        public PdfBitmap Render(
-            float scale,
-            uint? argbBackground,
-            Boundary viewport,
-            RenderFlags flags = RenderFlags.RenderAnnotations,
-            CancellationToken cancellationToken = default)
+        public PdfBitmap Render(PdfPageRenderConfig config)
         {
             if (_isDisposed)
                 throw new ObjectDisposedException(nameof(PdfPage));
 
-            if (viewport.IsEmpty)
-                throw new ArgumentException("Viewport is empty", nameof(viewport));
+            FpdfBitmapT bitmap = null;
 
-            var action = new RenderPageAction(
-                Document.Synchronizer,
-                PageInstance,
-                scale,
-                viewport,
-                flags,
-                argbBackground,
-                cancellationToken);
+            try
+            {
+                config.CancellationToken.ThrowIfCancellationRequested();
 
-            return Document.Synchronizer.SyncExec(() => action.ExecuteSync(default));
-        }
+                bitmap = Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapCreateEx(
+                    (int)config.Viewport.Width,
+                    (int)config.Viewport.Height,
+                    (int)FPDFBitmapFormat.BGRA,
+                    IntPtr.Zero,
+                    0));
 
-        public PdfBitmap Render(RenderPageAction action)
-        {
-            if (_isDisposed)
-                throw new ObjectDisposedException(nameof(PdfPage));
+                if (bitmap == null)
+                    throw new Exception("failed to create a bitmap object");
 
-            return Document.Synchronizer.SyncExec(() => action.ExecuteSync(CancellationToken.None));
+                config.CancellationToken.ThrowIfCancellationRequested();
 
+                if (config.BackgroundColor.HasValue)
+                {
+                    Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapFillRect(
+                        bitmap,
+                        0,
+                        0,
+                        (int)config.Viewport.Width,
+                        (int)config.Viewport.Height,
+                        config.BackgroundColor.Value));
+
+                    config.CancellationToken.ThrowIfCancellationRequested();
+                }
+
+                using var clipping = new FS_RECTF_
+                {
+                    Left = 0,
+                    Right = config.Viewport.Width,
+                    Bottom = 0,
+                    Top = config.Viewport.Height
+                };
+
+                // |          | a b 0 |
+                // | matrix = | c d 0 |
+                // |          | e f 1 |
+                using var matrix = new FS_MATRIX_
+                {
+                    A = config.Scale,
+                    B = 0,
+                    C = 0,
+                    D = config.Scale,
+                    E = config.OffsetX,
+                    F = config.OffsetY
+                };
+
+                Document.Synchronizer.SyncExec(() =>
+                    fpdfview.FPDF_RenderPageBitmapWithMatrix(bitmap, _pageInstance, matrix, clipping,
+                        (int)config.Flags));
+
+                config.CancellationToken.ThrowIfCancellationRequested();
+
+                return new PdfBitmap(bitmap, Document.Synchronizer, config.Scale, config.Viewport);
+            }
+            catch (OperationCanceledException)
+            {
+                if (bitmap != null)
+                    Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(bitmap));
+                throw;
+            }
+            catch (Exception ex)
+            {
+                if (bitmap != null)
+                    Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(bitmap));
+
+                throw new Exception("Error rendering page. Check inner exception.", ex);
+            }
+            finally
+            {
+
+            }
         }
 
         public void Dispose()

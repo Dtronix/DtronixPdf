@@ -19,10 +19,7 @@ namespace DtronixPdf.Tests
         {
             using var document = PdfDocument.Load("TestPdf.pdf", null);
             using var page = document.GetPage(0);
-            var renderPage = page.Render(
-                1,
-                (uint)Color.White.ToArgb(),
-                new Boundary(0, 0, page.Width, page.Height));
+            var renderPage = page.Render(1);
 
             var image = renderPage.GetImage();
 
@@ -35,10 +32,7 @@ namespace DtronixPdf.Tests
         {
             using var document = PdfDocument.Load("TestPdf.pdf", null);
             using var page = document.GetPage(0);
-            var renderPage = page.Render(
-                1,
-                (uint)Color.White.ToArgb(),
-                new Boundary(0, 0, page.Width, page.Height));
+            var renderPage = page.Render(1);
 
             using var writer = File.OpenWrite("test.png");
             renderPage.GetImage().Save(writer, new PngEncoder());

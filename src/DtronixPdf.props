@@ -3,7 +3,6 @@
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.0.0</Version>
     <Company>Dtronix</Company>
     <Product>Dtronix PDF</Product>
     <Copyright>Copyright © Dtronix 2022</Copyright>

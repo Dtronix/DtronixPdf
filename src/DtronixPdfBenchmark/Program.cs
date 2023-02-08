@@ -43,7 +43,7 @@ namespace DtronixPdfBenchmark
                 Point center = new Point(0, 0);
                 Size size = new Size(1920, 1080);
 
-                var viewport = new Boundary(
+                var viewport = new BoundaryF(
                     0, 
                     0,
                     1920,

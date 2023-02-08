@@ -49,12 +49,12 @@ namespace DtronixPdf.Tests
             var renderPage = page.Render(
                 1,
                 (uint)Color.White.ToArgb(), 
-                new Boundary(522, 477, 3, 3));
+                new BoundaryF(522, 477, 3, 3));
 
             var renderPage2 = page.Render(
                 1,
                 (uint)Color.White.ToArgb(), 
-                new Boundary(522, 477, 30, 30));
+                new BoundaryF(522, 477, 30, 30));
 
             renderPage2.Image.SaveAsPng("png1Crop.png");
 

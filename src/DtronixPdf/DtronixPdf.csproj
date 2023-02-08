@@ -2,7 +2,7 @@
   <Import Project="..\DtronixPdf.props" />
   <PropertyGroup>
     <Description>Tool to view and perform common modifications to PDFs. Based on PDFium.</Description>
-    <Version>1.1.1.0</Version>
+    <Version>1.1.2.0</Version>
   </PropertyGroup>
 	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
@@ -16,7 +16,7 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="DtronixCommon" Version="0.6.6" />
-		<PackageReference Include="PDFiumCore" Version="109.0.5378" />
+		<PackageReference Include="DtronixCommon" Version="0.7.0" />
+		<PackageReference Include="PDFiumCore" Version="112.0.5579" />
 	</ItemGroup>
 </Project>

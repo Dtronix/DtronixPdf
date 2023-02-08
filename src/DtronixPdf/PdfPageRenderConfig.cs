@@ -8,7 +8,7 @@ namespace DtronixPdf
     public record class PdfPageRenderConfig
     {
         public float Scale { get; init; }
-        public Boundary Viewport { get; init; }
+        public BoundaryF Viewport { get; init; }
 
         public uint? BackgroundColor { get; init; }
 

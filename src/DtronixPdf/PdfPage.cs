@@ -63,7 +63,7 @@ namespace DtronixPdf
             var config = new PdfPageRenderConfig()
             {
                 Scale = scale,
-                Viewport = new Boundary(0, 0, Width * scale, Height * scale),
+                Viewport = new BoundaryF(0, 0, Width * scale, Height * scale),
                 CancellationToken = cancellationToken,
             };
 

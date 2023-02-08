@@ -12,7 +12,7 @@ namespace DtronixPdf
 
         public float Scale { get; }
 
-        public Boundary Viewport { get; }
+        public BoundaryF Viewport { get; }
 
         public IntPtr Pointer { get; }
 
@@ -35,7 +35,7 @@ namespace DtronixPdf
             FpdfBitmapT pdfBitmap,
             PdfActionSynchronizer synchronizer,
             float scale, 
-            Boundary viewport)
+            BoundaryF viewport)
         {
             _pdfBitmap = pdfBitmap;
             Stride = fpdfview.FPDFBitmapGetStride(_pdfBitmap);

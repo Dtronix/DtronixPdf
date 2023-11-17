@@ -13,8 +13,6 @@ namespace DtronixPdf
         private static PdfiumManager _managerDefaultInstance;
         public static PdfiumManager Default => _managerDefaultInstance ??= new PdfiumManager();
 
-        private readonly PdfActionSynchronizer _synchronizer;
-
         private readonly List<PdfDocument> LoadedDocuments = new ();
 
         private static readonly ConcurrentBag<PdfiumManager> LoadedManagers = new ();
@@ -22,8 +20,6 @@ namespace DtronixPdf
         private PdfiumManager()
         {
             LoadedManagers.Add(this);
-
-            _synchronizer = new PdfActionSynchronizer();
         }
 
         /// <summary>
@@ -37,7 +33,7 @@ namespace DtronixPdf
 
             IsInitialized = true;
             // Initialize the library.
-            Default._synchronizer.SyncExec(fpdfview.FPDF_InitLibrary);
+            PdfActionSync.Default.SyncExec(fpdfview.FPDF_InitLibrary);
         }
 
         public static void Unload()
@@ -53,7 +49,7 @@ namespace DtronixPdf
 
             IsInitialized = false;
 
-            Default._synchronizer.SyncExec(fpdfview.FPDF_DestroyLibrary);
+            PdfActionSync.Default.SyncExec(fpdfview.FPDF_DestroyLibrary);
         }
 
         internal void AddDocument(PdfDocument document)

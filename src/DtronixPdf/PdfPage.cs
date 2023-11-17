@@ -9,7 +9,7 @@ namespace DtronixPdf
     public partial class PdfPage : IDisposable
     {
         internal readonly PdfDocument Document;
-        private readonly FpdfPageT _pageInstance;
+        internal readonly FpdfPageT PageInstance;
         private bool _isDisposed = false;
 
         public float Width { get; private set; }
@@ -17,12 +17,10 @@ namespace DtronixPdf
 
         public int InitialIndex { get; private set; }
 
-        internal FpdfPageT PageInstance => _pageInstance;
-
         private PdfPage(PdfDocument document, FpdfPageT pageInstance)
         {
             Document = document;
-            _pageInstance = pageInstance;
+            PageInstance = pageInstance;
         }
 
         internal static PdfPage Create(
@@ -128,7 +126,7 @@ namespace DtronixPdf
                 };
 
                 Document.Synchronizer.SyncExec(() =>
-                    fpdfview.FPDF_RenderPageBitmapWithMatrix(bitmap, _pageInstance, matrix, clipping,
+                    fpdfview.FPDF_RenderPageBitmapWithMatrix(bitmap, PageInstance, matrix, clipping,
                         (int)config.Flags));
 
                 config.CancellationToken.ThrowIfCancellationRequested();

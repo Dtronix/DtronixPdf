@@ -8,7 +8,7 @@
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
@@ -16,7 +16,7 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="DtronixCommon" Version="0.7.0" />
-		<PackageReference Include="PDFiumCore" Version="119.0.6043" />
+		<PackageReference Include="DtronixCommon" Version="0.8.0" />
+		<PackageReference Include="PDFiumCore" Version="121.0.6124" />
 	</ItemGroup>
 </Project>

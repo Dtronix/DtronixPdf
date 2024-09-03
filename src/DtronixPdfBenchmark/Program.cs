@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
+using System.Runtime.Intrinsics;
 using System.Threading.Tasks;
-using DtronixCommon;
 using DtronixPdf;
 using DtronixPdf.ImageSharp;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace DtronixPdfBenchmark
 {
@@ -43,11 +41,11 @@ namespace DtronixPdfBenchmark
                 Point center = new Point(0, 0);
                 Size size = new Size(1920, 1080);
 
-                var viewport = new BoundaryF(
-                    0, 
-                    0,
-                    1920,
-                    1080);
+                var viewport = Vector128.Create(
+                    0f, 
+                    0f,
+                    1920f,
+                    1080f);
 
                 using var result = page.Render(new PdfPageRenderConfig()
                 {

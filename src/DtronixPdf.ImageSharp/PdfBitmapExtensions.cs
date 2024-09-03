@@ -9,8 +9,8 @@ namespace DtronixPdf.ImageSharp
         {
             return Image.WrapMemory<Bgra32>(
                 bitmap.Pointer.ToPointer(),
-                (int)bitmap.Viewport.Width,
-                (int)bitmap.Viewport.Height);
+                (int)(bitmap.Viewport[2] - bitmap.Viewport[0]),
+                (int)(bitmap.Viewport[3] - bitmap.Viewport[1]));
         }
 
     }

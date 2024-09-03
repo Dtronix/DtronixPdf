@@ -3,7 +3,6 @@ using System.IO;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
-using DtronixCommon;
 using DtronixPdf.ImageSharp;
 using NUnit.Framework;
 using PDFiumCore;
@@ -20,7 +19,6 @@ namespace DtronixPdf.Tests
             using var document = PdfDocument.Load("TestPdf.pdf", null);
             using var page = document.GetPage(0);
             var renderPage = page.Render(1);
-
             var image = renderPage.GetImage();
 
             Assert.AreEqual(page.Width, image.Width);

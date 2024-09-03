@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Reflection.Metadata;
+using System.Runtime.Intrinsics;
 using System.Threading;
-using DtronixCommon;
 using PDFiumCore;
 
 namespace DtronixPdf
@@ -63,7 +62,7 @@ namespace DtronixPdf
             var config = new PdfPageRenderConfig()
             {
                 Scale = scale,
-                Viewport = new BoundaryF(0, 0, Width * scale, Height * scale),
+                Viewport = Vector128.Create(0, 0, Width * scale, Height * scale),
                 CancellationToken = cancellationToken,
             };
 
@@ -77,13 +76,20 @@ namespace DtronixPdf
 
             FpdfBitmapT bitmap = null;
 
+            var viewportHeight = config.Viewport.GetHeight();
+            var viewportHeightInt = (int)viewportHeight;
+            var viewportWidth = config.Viewport.GetWidth();
+            var viewportWidthInt = (int)viewportWidth;
+
+
+
             try
             {
                 config.CancellationToken.ThrowIfCancellationRequested();
 
                 bitmap = Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapCreateEx(
-                    (int)config.Viewport.Width,
-                    (int)config.Viewport.Height,
+                    viewportWidthInt,
+                    viewportHeightInt,
                     (int)FPDFBitmapFormat.BGRA,
                     IntPtr.Zero,
                     0));
@@ -99,8 +105,8 @@ namespace DtronixPdf
                         bitmap,
                         0,
                         0,
-                        (int)config.Viewport.Width,
-                        (int)config.Viewport.Height,
+                        viewportWidthInt,
+                        viewportHeightInt,
                         config.BackgroundColor.Value));
 
                     config.CancellationToken.ThrowIfCancellationRequested();
@@ -109,9 +115,9 @@ namespace DtronixPdf
                 using var clipping = new FS_RECTF_
                 {
                     Left = 0,
-                    Right = config.Viewport.Width,
+                    Right = viewportWidth,
                     Bottom = 0,
-                    Top = config.Viewport.Height
+                    Top = viewportHeight
                 };
 
                 // |          | a b 0 |

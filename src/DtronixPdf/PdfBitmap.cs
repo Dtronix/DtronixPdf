@@ -1,5 +1,5 @@
 ﻿using System;
-using DtronixCommon;
+using System.Runtime.Intrinsics;
 using PDFiumCore;
 
 namespace DtronixPdf
@@ -12,7 +12,10 @@ namespace DtronixPdf
 
         public float Scale { get; }
 
-        public BoundaryF Viewport { get; }
+        /// <summary>
+        /// MinX, MinY, MaxX, MaxY
+        /// </summary>
+        public Vector128<float> Viewport { get; }
 
         public IntPtr Pointer { get; }
 
@@ -30,17 +33,17 @@ namespace DtronixPdf
         /// <param name="pdfBitmap"></param>
         /// <param name="synchronizer"></param>
         /// <param name="scale"></param>
-        /// <param name="viewport"></param>
+        /// <param name="viewport">MinX, MinY, MaxX, MaxY</param>
         internal PdfBitmap(
             FpdfBitmapT pdfBitmap,
             PdfActionSynchronizer synchronizer,
-            float scale, 
-            BoundaryF viewport)
+            float scale,
+            Vector128<float> viewport)
         {
             _pdfBitmap = pdfBitmap;
             Stride = fpdfview.FPDFBitmapGetStride(_pdfBitmap);
-            Width = (int)viewport.Width;
-            Height = (int)viewport.Height;
+            Width = (int)viewport.GetWidth();
+            Height = (int)viewport.GetHeight();
             Pointer = fpdfview.FPDFBitmapGetBuffer(_pdfBitmap);
             _synchronizer = synchronizer;
             Scale = scale;

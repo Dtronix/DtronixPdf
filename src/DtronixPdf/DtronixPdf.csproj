@@ -2,13 +2,13 @@
   <Import Project="..\DtronixPdf.props" />
   <PropertyGroup>
     <Description>Tool to view and perform common modifications to PDFs. Based on PDFium.</Description>
-    <Version>1.2.0.0</Version>
+    <Version>1.2.1.0</Version>
   </PropertyGroup>
 	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
@@ -16,6 +16,6 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="PDFiumCore" Version="119.0.6043" />
+		<PackageReference Include="PDFiumCore" Version="130.0.6693" />
 	</ItemGroup>
 </Project>

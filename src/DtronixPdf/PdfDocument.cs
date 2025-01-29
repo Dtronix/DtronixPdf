@@ -10,16 +10,15 @@ namespace DtronixPdf
     {
         internal readonly FpdfDocumentT Instance;
 
-        internal readonly PdfActionSynchronizer Synchronizer;
-
         private bool _isDisposed = false;
         private IntPtr? _documentPointer;
 
+        //private static PdfActionSynchronizer _synchronizer = new PdfActionSynchronizer();
+
         public int Pages { get; private set; }
 
-        private PdfDocument(PdfActionSynchronizer synchronizer, FpdfDocumentT instance)
+        private PdfDocument(FpdfDocumentT instance)
         {
-            Synchronizer = synchronizer;
             Instance = instance;
             PdfiumManager.Default.AddDocument(this);
         }
@@ -27,16 +26,14 @@ namespace DtronixPdf
         public static PdfDocument Load(string path, string password)
         {
             PdfiumManager.Initialize();
-
-            var synchronizer = new PdfActionSynchronizer();
-
-            var document = synchronizer.SyncExec(() => fpdfview.FPDF_LoadDocument(path, password));
-            var pages = synchronizer.SyncExec(() => fpdfview.FPDF_GetPageCount(document));
+            
+            var document = PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDF_LoadDocument(path, password));
+            var pages = PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDF_GetPageCount(document));
 
             if (document == null)
                 return null;
 
-            var pdfDocument = new PdfDocument(synchronizer, document) { Pages = pages, };
+            var pdfDocument = new PdfDocument(document) { Pages = pages, };
 
             return pdfDocument;
 
@@ -44,7 +41,7 @@ namespace DtronixPdf
 
         public static unsafe PdfDocument Load(Stream stream, string password)
         {
-            var synchronizer = new PdfActionSynchronizer();
+            //var synchronizer = new PdfActionSynchronizer();
 
             var length = (int)stream.Length;
 
@@ -61,7 +58,7 @@ namespace DtronixPdf
             PdfiumManager.Initialize();
 
             int pages = -1;
-            var result = synchronizer.SyncExec(() =>
+            var result = PdfiumManager.Default.Synchronizer.SyncExec(() =>
             {
                 var document = fpdfview.FPDF_LoadMemDocument(pointer, length, password);
                 pages = fpdfview.FPDF_GetPageCount(document);
@@ -71,7 +68,7 @@ namespace DtronixPdf
             if (result == null)
                 return null;
 
-            var pdfDocument = new PdfDocument(synchronizer, result)
+            var pdfDocument = new PdfDocument(result)
             {
                 Pages = pages,
                 _documentPointer = pointer
@@ -82,14 +79,14 @@ namespace DtronixPdf
 
         public static PdfDocument Create()
         {
-            var synchronizer = new PdfActionSynchronizer();
+            //var synchronizer = new PdfActionSynchronizer();
 
-            var result = synchronizer.SyncExec(fpdf_edit.FPDF_CreateNewDocument);
+            var result = PdfiumManager.Default.Synchronizer.SyncExec(fpdf_edit.FPDF_CreateNewDocument);
 
             if (result == null)
                 return null;
 
-            return new PdfDocument(synchronizer, result);
+            return new PdfDocument(result);
         }
 
         public PdfPage GetPage(int pageIndex)
@@ -108,7 +105,7 @@ namespace DtronixPdf
         /// <returns>True on success, false on failure.</returns>
         public bool ImportPages(PdfDocument document, string pageRange, int insertIndex)
         {
-            return Synchronizer.SyncExec(() =>
+            return PdfiumManager.Default.Synchronizer.SyncExec(() =>
                 fpdf_ppo.FPDF_ImportPages(Instance, document.Instance, pageRange, insertIndex) == 1);
         }
 
@@ -132,7 +129,7 @@ namespace DtronixPdf
         /// <returns>True on success, false on failure.</returns>
         public void DeletePage(int pageIndex)
         {
-            Synchronizer.SyncExec(() => fpdf_edit.FPDFPageDelete(Instance, pageIndex));
+            PdfiumManager.Default.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageDelete(Instance, pageIndex));
         }
 
 
@@ -162,7 +159,7 @@ namespace DtronixPdf
             #define FPDF_REMOVE_SECURITY 3
              */
 
-            var result = Synchronizer.SyncExec(() => fpdf_save.FPDF_SaveAsCopy(Instance, writer, 1));
+            var result = PdfiumManager.Default.Synchronizer.SyncExec(() => fpdf_save.FPDF_SaveAsCopy(Instance, writer, 1));
 
             return result == 1;
         }
@@ -174,7 +171,7 @@ namespace DtronixPdf
 
             _isDisposed = true;
 
-            Synchronizer.SyncExec(() => fpdfview.FPDF_CloseDocument(Instance));
+            PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDF_CloseDocument(Instance));
 
             PdfiumManager.Default.RemoveDocument(this);
 

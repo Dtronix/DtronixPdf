@@ -8,8 +8,6 @@ namespace DtronixPdf
     {
         private readonly FpdfBitmapT _pdfBitmap;
 
-        private readonly PdfActionSynchronizer _synchronizer;
-
         public float Scale { get; }
 
         /// <summary>
@@ -31,12 +29,10 @@ namespace DtronixPdf
         /// Only call within the synchronizer since dll calls are made.
         /// </summary>
         /// <param name="pdfBitmap"></param>
-        /// <param name="synchronizer"></param>
         /// <param name="scale"></param>
         /// <param name="viewport">MinX, MinY, MaxX, MaxY</param>
         internal PdfBitmap(
             FpdfBitmapT pdfBitmap,
-            PdfActionSynchronizer synchronizer,
             float scale,
             Vector128<float> viewport)
         {
@@ -45,7 +41,6 @@ namespace DtronixPdf
             Width = (int)viewport.GetWidth();
             Height = (int)viewport.GetHeight();
             Pointer = fpdfview.FPDFBitmapGetBuffer(_pdfBitmap);
-            _synchronizer = synchronizer;
             Scale = scale;
             Viewport = viewport;
         }
@@ -57,7 +52,7 @@ namespace DtronixPdf
 
             IsDisposed = true;
 
-            _synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(_pdfBitmap));
+            PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(_pdfBitmap));
         }
     }
 }

@@ -8,22 +8,25 @@ namespace DtronixPdf
 
     public class PdfiumManager
     {
-        private static bool IsInitialized;
+        private static bool _isInitialized;
 
         private static PdfiumManager _managerDefaultInstance;
         public static PdfiumManager Default => _managerDefaultInstance ??= new PdfiumManager();
 
-        private readonly PdfActionSynchronizer _synchronizer;
+        /// <summary>
+        /// Gets the <see cref="PdfActionSynchronizer"/> instance used to synchronize actions in a PDF document.
+        /// </summary>
+        public PdfActionSynchronizer Synchronizer { get; }
 
-        private readonly List<PdfDocument> LoadedDocuments = new ();
+        private readonly ConcurrentDictionary<PdfDocument, PdfDocument> _loadedDocuments = new ();
 
-        private static readonly ConcurrentBag<PdfiumManager> LoadedManagers = new ();
+        private static readonly ConcurrentBag<PdfiumManager> _loadedManagers = new ();
 
         private PdfiumManager()
         {
-            LoadedManagers.Add(this);
+            _loadedManagers.Add(this);
 
-            _synchronizer = new PdfActionSynchronizer();
+            Synchronizer = new PdfActionSynchronizer();
         }
 
         /// <summary>
@@ -32,28 +35,28 @@ namespace DtronixPdf
         /// <returns></returns>
         internal static void Initialize()
         {
-            if (IsInitialized)
+            if (_isInitialized)
                 return;
 
-            IsInitialized = true;
+            _isInitialized = true;
             // Initialize the library.
-            Default._synchronizer.SyncExec(fpdfview.FPDF_InitLibrary);
+            Default.Synchronizer.SyncExec(fpdfview.FPDF_InitLibrary);
         }
 
         public static void Unload()
         {
-            if (!IsInitialized)
+            if (!_isInitialized)
                 return;
 
-            foreach (var pdfiumCoreManager in LoadedManagers)
+            foreach (var pdfiumCoreManager in _loadedManagers)
             {
-                if (pdfiumCoreManager.LoadedDocuments.Count > 0)
+                if (pdfiumCoreManager._loadedDocuments.Count > 0)
                     throw new InvalidOperationException("Can't destroy loaded library since it is still in use by PdfDocument(s)");
             }
 
-            IsInitialized = false;
+            _isInitialized = false;
 
-            Default._synchronizer.SyncExec(fpdfview.FPDF_DestroyLibrary);
+            Default.Synchronizer.SyncExec(fpdfview.FPDF_DestroyLibrary);
         }
 
         internal void AddDocument(PdfDocument document)
@@ -61,9 +64,9 @@ namespace DtronixPdf
             if (document == null)
                 throw new ArgumentNullException(nameof(document));
 
-            lock (LoadedDocuments)
+            lock (_loadedDocuments)
             {
-                LoadedDocuments.Add(document);
+                _loadedDocuments.TryAdd(document, document);
             }
         }
 
@@ -72,9 +75,9 @@ namespace DtronixPdf
             if (document == null)
                 throw new ArgumentNullException(nameof(document));
 
-            lock (LoadedDocuments)
+            lock (_loadedDocuments)
             {
-                LoadedDocuments.Remove(document);
+                _loadedDocuments.Remove(document, out _);
             }
         }
     }

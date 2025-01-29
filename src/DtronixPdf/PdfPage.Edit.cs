@@ -17,7 +17,7 @@ namespace DtronixPdf
         /// <returns></returns>
         public void SetRotation(int rotation)
         {
-            Document.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageSetRotation(PageInstance, rotation));
+            PdfiumManager.Default.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageSetRotation(PageInstance, rotation));
         }
 
         /// <summary>
@@ -31,22 +31,16 @@ namespace DtronixPdf
         /// </returns>
         public int GetRotation()
         {
-            return Document.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageGetRotation(PageInstance));
+            return PdfiumManager.Default.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageGetRotation(PageInstance));
         }
 
+
         /// <summary>
-        /// Rotates the page
+        /// Deletes the page.
         /// </summary>
-        /// <param name="rotation">
-        /// <para>0 - No rotation.</para>
-        /// <para>1 - Rotated 90 degrees clockwise.</para>
-        /// <para>2 - Rotated 180 degrees clockwise.</para>
-        /// <para>3 - Rotated 270 degrees clockwise.</para>
-        /// </param>
-        /// <returns></returns>
         public void Delete()
         {
-            Document.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageDelete(Document.Instance, InitialIndex));
+            PdfiumManager.Default.Synchronizer.SyncExec(() => fpdf_edit.FPDFPageDelete(Document.Instance, InitialIndex));
         }
     }
 }

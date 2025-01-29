@@ -28,7 +28,7 @@ namespace DtronixPdf
             PdfDocument document,
             int pageIndex)
         {
-            var loadPageResult = document.Synchronizer.SyncExec(() => fpdfview.FPDF_LoadPage(document.Instance, pageIndex));
+            var loadPageResult = PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDF_LoadPage(document.Instance, pageIndex));
             if (loadPageResult == null)
                 throw new Exception($"Failed to open page for page index {pageIndex}.");
 
@@ -37,7 +37,7 @@ namespace DtronixPdf
                 InitialIndex = pageIndex
             };
 
-            var getPageSizeResult = document.Synchronizer.SyncExec(() =>
+            var getPageSizeResult = PdfiumManager.Default.Synchronizer.SyncExec(() =>
             {
                 var size = new FS_SIZEF_();
 
@@ -87,7 +87,7 @@ namespace DtronixPdf
             {
                 config.CancellationToken.ThrowIfCancellationRequested();
 
-                bitmap = Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapCreateEx(
+                bitmap = PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapCreateEx(
                     viewportWidthInt,
                     viewportHeightInt,
                     (int)FPDFBitmapFormat.BGRA,
@@ -101,7 +101,7 @@ namespace DtronixPdf
 
                 if (config.BackgroundColor.HasValue)
                 {
-                    Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapFillRect(
+                    PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapFillRect(
                         bitmap,
                         0,
                         0,
@@ -133,24 +133,24 @@ namespace DtronixPdf
                     F = config.OffsetY
                 };
 
-                Document.Synchronizer.SyncExec(() =>
+                PdfiumManager.Default.Synchronizer.SyncExec(() =>
                     fpdfview.FPDF_RenderPageBitmapWithMatrix(bitmap, _pageInstance, matrix, clipping,
                         (int)config.Flags));
 
                 config.CancellationToken.ThrowIfCancellationRequested();
 
-                return new PdfBitmap(bitmap, Document.Synchronizer, config.Scale, config.Viewport);
+                return new PdfBitmap(bitmap, config.Scale, config.Viewport);
             }
             catch (OperationCanceledException)
             {
                 if (bitmap != null)
-                    Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(bitmap));
+                    PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(bitmap));
                 throw;
             }
             catch (Exception ex)
             {
                 if (bitmap != null)
-                    Document.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(bitmap));
+                    PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDFBitmapDestroy(bitmap));
 
                 throw new Exception("Error rendering page. Check inner exception.", ex);
             }
@@ -167,7 +167,7 @@ namespace DtronixPdf
 
             _isDisposed = true;
 
-            Document.Synchronizer.SyncExec(() => fpdfview.FPDF_ClosePage(PageInstance));
+            PdfiumManager.Default.Synchronizer.SyncExec(() => fpdfview.FPDF_ClosePage(PageInstance));
         }
     }
 }

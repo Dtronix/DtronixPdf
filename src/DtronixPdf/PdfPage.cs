@@ -168,7 +168,7 @@ namespace DtronixPdf
             if (_isDisposed)
                 throw new ObjectDisposedException(nameof(PdfPage));
 
-            return Document.Synchronizer.SyncExec(() =>
+            return PdfiumManager.Default.Synchronizer.SyncExec(() =>
             {
                 var textPage = fpdf_text.FPDFTextLoadPage(_pageInstance);
                 if (textPage.__Instance.ToInt64() == IntPtr.Zero)
@@ -184,12 +184,12 @@ namespace DtronixPdf
                     if (length <= 0)
                         return string.Empty;
 
-                    var buffer = new ushort[length];
+                    var buffer = GC.AllocateArray<ushort>(length, true);
 
                     // Extract the text into the buffer
                     fpdf_text.FPDFTextGetBoundedText(textPage, x, y, x2, y2, ref buffer[0], length);
 
-                    return Encoding.Unicode.GetString(MemoryMarshal.AsBytes(buffer.AsSpan()).ToArray());
+                    return Encoding.Unicode.GetString(MemoryMarshal.AsBytes(buffer.AsSpan()));
                 }
                 finally
                 {

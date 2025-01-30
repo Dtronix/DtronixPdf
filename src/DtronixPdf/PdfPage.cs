@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Text;
 using System.Threading;
 using PDFiumCore;
 
@@ -158,6 +161,41 @@ namespace DtronixPdf
             {
 
             }
+        }
+
+        public string GetText(double x, double y, double width, double height)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(PdfPage));
+
+            return PdfiumManager.Default.Synchronizer.SyncExec(() =>
+            {
+                var textPage = fpdf_text.FPDFTextLoadPage(_pageInstance);
+                if (textPage.__Instance.ToInt64() == IntPtr.Zero)
+                    throw new InvalidOperationException("Failed to load text page.");
+
+                try
+                {
+                    double x2 = x + width;
+                    double y2 = y + height;
+
+                    // First call to get the required buffer length
+                    int length = fpdf_text.FPDFTextGetBoundedText(textPage, x, y, x2, y2, ref Unsafe.NullRef<ushort>(), 0);
+                    if (length <= 0)
+                        return string.Empty;
+
+                    var buffer = GC.AllocateArray<ushort>(length, true);
+
+                    // Extract the text into the buffer
+                    fpdf_text.FPDFTextGetBoundedText(textPage, x, y, x2, y2, ref buffer[0], length);
+
+                    return Encoding.Unicode.GetString(MemoryMarshal.AsBytes(buffer.AsSpan()));
+                }
+                finally
+                {
+                    fpdf_text.FPDFTextClosePage(textPage);
+                }
+            });
         }
 
         public void Dispose()

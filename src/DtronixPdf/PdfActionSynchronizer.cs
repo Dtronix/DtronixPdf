@@ -5,7 +5,7 @@ namespace DtronixPdf
 {
     public class PdfActionSynchronizer
     {
-        public readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
         private const int Timeout = 60_000;
 
         public void SyncExec(Action action)
@@ -13,15 +13,16 @@ namespace DtronixPdf
             bool acquired = false;
             try
             {
-                Semaphore.Wait(Timeout);
+                if (!_semaphore.Wait(Timeout))
+                    throw new TimeoutException("Timed out acquiring exclusive lock...");
                 acquired = true;
                 action();
-                Semaphore.Release();
+                _semaphore.Release();
             }
             catch
             {
                 if(acquired)
-                    Semaphore.Release();
+                    _semaphore.Release();
                 throw;
             }
         }
@@ -31,16 +32,17 @@ namespace DtronixPdf
             bool acquired = false;
             try
             {
-                Semaphore.Wait(Timeout);
+                if (!_semaphore.Wait(Timeout))
+                    throw new TimeoutException("Timed out acquiring exclusive lock...");
                 acquired = true;
                 var result = function();
-                Semaphore.Release();
+                _semaphore.Release();
                 return result;
             }
             catch
             {
                 if (acquired)
-                    Semaphore.Release();
+                    _semaphore.Release();
                 throw;
             }
         }
